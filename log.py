@@ -23,6 +23,10 @@ class log_file():
         lock = threading.Lock()
 
     def log(self, message, level):
+        """
+        :param message: the message to log
+        :param level: the level of loggin between 1 to 5
+        """
         with lock:
             print message
             if level == 1:
@@ -115,7 +119,8 @@ class file():
         return email in self.adreses
 
 
-
+def main():
+    pass
 
 if __name__ == '__main__':
     main()
