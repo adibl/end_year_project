@@ -15,27 +15,30 @@ import threading
 class log_file():
     def __init__(self, file_name, format):
         logging.basicConfig(filename=file_name, level=logging.DEBUG, format=format)
-        self.logger = logging.getLogger()
-        self.logger.info(datetime.datetime.now())
-        self.lock = threading.Lock()
+        global logger #FIXME: need to be self and not global
+        logger = logging.getLogger()
+
+        logger.info(datetime.datetime.now())
+        global lock #FIXME: maby can be self.lock????
+        lock = threading.Lock()
 
     def log(self, message, level):
         """
         :param message: the message to log
         :param level: the level of loggin between 1 to 5
         """
-        with self.lock:
+        with lock:
             print message
             if level == 1:
-                self.logger.debug(str(message))
+                logger.debug(str(message))
             elif level == 2:
-                self.logger.info(str(message))
+                logger.info(str(message))
             elif level == 3:
-                self.logger.warning(str(message))
+                logger.warning(str(message))
             elif level == 4:
-                self.logger.error(str(message))
+                logger.error(str(message))
             elif level == 5:
-                self.logger.critical(str(message))
+                logger.critical(str(message))
             else:
                 print message
 
@@ -49,7 +52,7 @@ class file():
         self.file_name = file_name
         self.len = os.stat(file_name).st_size
         self.adreses = {"aaa@aaa.com": [[], []], "bbb@aaa.com": [[], []]}
-        self.lock = threading.Lock()
+        print 'cc'
 
 
     def add(self, data):
@@ -57,7 +60,7 @@ class file():
         add data to the database
         :param data:the data to add to the database
         """
-        with self.lock:
+        with lock:
             with open(self.file_name, 'a+') as handel:
                 handel.write(data)
                 self.len += len(data)
@@ -106,7 +109,7 @@ class file():
         :param email: the email that is in the file
         :return: none
         """
-        with self.lock:
+        with lock:
             for dest in email[1]:
                 self.adreses[dest][0].append((place, len(email)))
             self.adreses[email[0]][1].append((place, len(email)))

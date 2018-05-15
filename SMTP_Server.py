@@ -6,7 +6,6 @@ ready
 """
 import sys
 import socket
-import time
 
 sys.path.append(r'.')
 from log import log_file
@@ -41,11 +40,10 @@ def receive(client_socket, func):
     :param func: the exit funcsion of the while loop.
     :param client_socket: the comm socket
     :return: the data thet was recived from the socket
+    FIXME: add return none if timeout (add timeout)
     """
-    #FIXME: add return none if timeout (add timeout) cann end the prog with sys.exit()
     data = ""
     while func(data):
-        print time.time()
         data += client_socket.recv(1)
     log.log("RECV:" + data, 1)
     return data

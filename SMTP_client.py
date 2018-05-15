@@ -11,7 +11,6 @@ ENDINGS = ['.com', '.co.il']
 SERVER_IP= "127.0.0.1"
 SERVER_PORT = 20011
 
-"""
 def login():
     window = Tk()
     f = Frame(window)
@@ -54,12 +53,30 @@ def Sign_up(f, window):
     t3.pack()
     button1.pack()
     f.mainloop()
-    """
 
 def check_valid(email):
     return '@' in email and any(end in email for end in ENDINGS)
 
-def send_email_GUI():
+def send_massege(dest, head, massege, f):
+    if check_valid(dest):
+        f.destroy()
+        print massege
+        return True
+    l = Label(f, text="wrong Email adress", foreground="red")
+    l.grid(row=0, column=2)
+    return False
+
+#unused def
+def erores_GUI(erores, f):
+    print erores
+    l = Label(f, text="wrong Email adress", foreground="red")
+    button1.configure(command=f.quit)
+    #FIXME: cange buttom sedt funcsion to end the mainloop
+    l.grid(row=0, column=2)
+    f.mainloop()
+    return t1.get()
+
+def send_email_GUI(client_socket):
     """
     GUI + send the input from user to ceck in the server and wait for responce
     :param client_socket: the comm socket
@@ -68,15 +85,17 @@ def send_email_GUI():
     f = Frame(window)
     f.pack()
     window.title("send_email")
-    window.minsize(1000, 1000)
+    window.minsize(700, 700)
     f =Frame(window)
     f.pack()
     l1 = Label(f, text='dest:')
     l2 = Label(f, text='head: ')
     l3 = Label(f, text='messege: ')
+    global t1 #FIXME: make it not global, may not do nothing wrong
     t1 = Entry(f, textvariable=StringVar())
     t2 = Entry(f, textvariable=StringVar())
     t3 = ScrolledText.ScrolledText(f)
+    global button1 #FIXME: make it not global, may not do nothing wrong
     button1 = Button(f, text='send mail', compound='bottom', command=f.quit)
     l1.grid()
     t1.grid(row=0, column=1, sticky=W+E+N+S)
@@ -88,8 +107,34 @@ def send_email_GUI():
     f.columnconfigure(0, weight=1, uniform='third')
     f.columnconfigure(1, weight=2, uniform='third')
     f.columnconfigure(2, weight=1, uniform='third')
-    f.mainloop()
-    return (t1, t2, t3, f)
+    f.mainloop() #FIXME: make the text above to func thet return t and tuple of the botooms
+    dests = t1.get().split(" ")
+    while valid_destinasions(client_socket, dests) is not True:
+        l4 = Label(f, text="wrong Email adress", foreground="red")
+        l4.grid(row=0, column=2)
+        f.mainloop()
+        dests = t1.get().split(" ")
+    email = ""
+    for dest in dests:
+            email += "To:" + "<" + dest + ">\r\n"
+    email += "Date:" + str(datetime.datetime.now()) + "\r\n"
+    email += "subject:" + t2.get() + "\r\n"
+    email += t3.get(1.0, END)
+    email += '\r\n.'
+    return email
+
+
+"""
+def verify(user_name, password, window):
+    print user_name
+    print password
+    if password == 'aaa' and user_name == 'aaa':
+        window.destroy()
+    else:
+        m1 = Label(window, text='paswword or user name is wrong, enter again', foreground='red2')
+        m1.pack()
+        window.mainloop()
+        """
 
 
 def receive(client_socket, func):
@@ -155,27 +200,68 @@ def valid_destinasions(client_socket, destination):
 
 
 #not in use
-def send_email(client_socket):
-    dest_box, subject_box, text_box, f = send_email_GUI()
-    dests = dest_box.get().split(" ")
-    unvalid_dests = valid_destinasions(client_socket, dests)
-    while unvalid_dests is not True:
-        l4 = Label(f, text="wrong Email adreses are:" + str(unvalid_dests)[1:-1], foreground="red")
-        l4.grid(row=0, column=2)
-        f.mainloop()
-        dests = dest_box.get().split(" ")
-        unvalid_dests = valid_destinasions(client_socket, dests)
-    email = ""
-    for dest in dests:
+def send_email(sender, name, destinations, subject, massege, frame):
+    """
+    :param sender: the email sdress of the sender
+    :param name: the name of the sender
+    :param destinations: list of the destinations emails
+    :param subject: the email subject
+    :param massege: the email content
+    :return: none
+    #FIXME: make the print to reask the user
+    """
+    print sender
+    print name
+    print destinations
+    destinations = destinations.split(" ")
+    print destinations
+    print subject
+    print massege
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        client_socket.connect((SERVER_IP, SERVER_PORT))
+        # send the message
+        if not handshake(client_socket, sender):
+            print "unvalid handshake"
+        if not vaild_sender(client_socket, sender):
+            print "unvalid email adress"
+        email = "From:" + ' "' + name + '" ' + "<" + sender + ">" + "\r\n"
+        unvalid_destinations = valid_destinasions(client_socket, destinations)
+
+        while unvalid_destinations is not True:
+            print 'unvalid dests'
+            destinations = erores_GUI(unvalid_destinations, frame).split(" ")
+            print 'quit'
+            unvalid_destinations = valid_destinasions(client_socket, destinations)
+            print unvalid_destinations
+
+        print 'go over'
+        for dest in destinations:
             email += "To:" + "<" + dest + ">\r\n"
-    email += "Date:" + str(datetime.datetime.now()) + "\r\n"
-    subject = subject_box.get()
-    if subject == "":
-        subject = "(no subject)"
-    email += "subject:" + subject + "\r\n"
-    email += text_box.get(1.0, END)
-    email += '\r\n.'
-    return email
+        email += "Date:" + str(datetime.datetime.now()) + "\r\n"
+        email += "subject:" + subject + "\r\n"
+        email += massege
+        email += '\r\n.'
+        print email
+
+        client_socket.sendall("DATA\r\n")
+        data = receive(client_socket, lambda data: "\r\n" not in data)
+        if not data[:3] == "354":
+            print 'server error'
+        client_socket.sendall(email)
+        data = receive(client_socket, lambda data: "\r\n" not in data)
+        if not data[:3] == "250":
+            print 'unvalid email'
+        print 'send'
+
+    except socket.error as msg:
+        print 'error in communication with server - ' + str(msg)
+    finally:
+        frame.destroy()
+        time.sleep(1)
+        while not receive(client_socket, lambda d:"\r\n" not in d)[:3] == "221":
+            client_socket.send("QUIT\r\n")
+        client_socket.close()
 
 
 def send_email2(masseges):
@@ -228,7 +314,7 @@ def GUI():
         if not vaild_sender(client_socket, sender):
             print "unvalid email adress"   #FIXME: and GUI interfase
         email = "From:" + ' "' + name + '" ' + "<" + sender + ">" + "\r\n"
-        email += send_email(client_socket)
+        email += send_email_GUI(client_socket)
 
         client_socket.sendall("DATA\r\n")
         data = receive(client_socket, lambda data: "\r\n" not in data)
@@ -257,7 +343,12 @@ def main():
     send_email2(["GET HTTP1.1\r\n"]) #yes
     send_email2(["HELO relay.example.com", "MAIL FROM:<ccc@aaa.com>\r\n", "MAIL FROM:<bbb@aaa.com>\r\n",
                "RCPT TO:<aaa@aaa.com>\r\n", "DATA\r\n",
-               "From:<bbb@aaa.com>\r\nTo:<aba@aaa.com>\r\nsubject:aa\r\nDate:123\r\nteast\r\n.\r\n\r\n.\r\n", "QUIT\r\n"])  # yes
+               "From:<bbb@aaa.com>\r\nTo:<aba@aaa.com>\r\nsubject:aa\r\nDate:123\r\nteast\r\n.\r\n\r\n.\r\n", "QUIT\r\n"])  # yes but the server disconect the client without he sent QUIT and make him crush
+
+    global log
+    log = log_file("client.log", '%(levelname)s:%(message)s')
+    send_email("aaa@aaa.com", 'adib', "bbb@aaa.com", "text", "my first client") # yes
+    send_email("aaa@aaa.com", 'adib', "bbb@aaa.com ccc@aaa.com", "text", "my first client")
 
 
 if __name__ == '__main__':
