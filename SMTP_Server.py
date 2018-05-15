@@ -8,11 +8,16 @@ import sys
 import socket
 import time
 
+
 sys.path.append(r'.')
-from log import log_file
-from log import file
+from log import LogFile
+from log import DataFile
 
 from threading import Thread
+global database
+database = DataFile("data.txt")
+global log
+log = LogFile("smtp.log", '%(thread)d %(levelname)s:%(message)s')
 
 LOG_FILE = 'server.log'
 USERS_LINE_SEPARATOR = '\n'
@@ -45,7 +50,6 @@ def receive(client_socket, func):
     #FIXME: add return none if timeout (add timeout) cann end the prog with sys.exit()
     data = ""
     while func(data):
-        print time.time()
         data += client_socket.recv(1)
     log.log("RECV:" + data, 1)
     return data
@@ -210,19 +214,7 @@ def main():
     """
     Add Documentation here
     """
-    globals()
     main_loop()
-
-
-def globals():
-    """
-    set the globals for the program.
-    set the log config and the database
-    """
-    global log
-    log = log_file("smtp.log", '%(thread)d %(levelname)s:%(message)s')
-    global database
-    database = file("data.txt")
 
 
 if __name__ == '__main__':

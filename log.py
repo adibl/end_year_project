@@ -7,15 +7,17 @@ import logging
 import datetime
 import os
 import threading
-
 # remember to do assertsa
 # update documentation
 
 
-class log_file():
+class LogFile():
     def __init__(self, file_name, format):
-        logging.basicConfig(filename=file_name, level=logging.DEBUG, format=format)
+        logging.basicConfig(level=logging.DEBUG, format=format)
         self.logger = logging.getLogger()
+        self.logger.setLevel(logging.DEBUG)
+        handler = logging.FileHandler(file_name)
+        self.logger.addHandler(handler)
         self.logger.info(datetime.datetime.now())
         self.lock = threading.Lock()
 
@@ -25,7 +27,6 @@ class log_file():
         :param level: the level of loggin between 1 to 5
         """
         with self.lock:
-            print message
             if level == 1:
                 self.logger.debug(str(message))
             elif level == 2:
@@ -40,17 +41,16 @@ class log_file():
                 print message
 
 
-class file():
+class DataFile():
     def __init__(self, file_name):
         if not os.path.isfile(file_name):
             handel = open(file_name, 'w')
             handel.close()
-            self.len = 0
+            self.length = 0
         self.file_name = file_name
-        self.len = os.stat(file_name).st_size
-        self.adreses = {"aaa@aaa.com": [[], []], "bbb@aaa.com": [[], []]}
+        self.length = os.stat(file_name).st_size
+        self.adreses = {"aaa@aaa.com": EmailData(), "bbb@aaa.com": EmailData()}
         self.lock = threading.Lock()
-
 
     def add(self, data):
         """
@@ -60,7 +60,7 @@ class file():
         with self.lock:
             with open(self.file_name, 'a+') as handel:
                 handel.write(data)
-                self.len += len(data)
+                self.length += len(data)
 
     def read_position(self, pos, length):
         """
@@ -72,9 +72,8 @@ class file():
             data = handel.read(length)
         print data
 
-
     def get_file_len(self):
-        return self.len
+        return self.length
 
     def add_email(self, email):
         """
@@ -85,7 +84,6 @@ class file():
         place = self.add_to_database(email)
         self.add_to_dicsionery(place, email)
         return place
-
 
     def add_to_database(self, email):
         """
@@ -98,7 +96,6 @@ class file():
         self.add(email[2])
         return lengh
 
-
     def add_to_dicsionery(self, place, email):
         """
         add the email place in file to the sender and the receivers
@@ -108,13 +105,42 @@ class file():
         """
         with self.lock:
             for dest in email[1]:
-                self.adreses[dest][0].append((place, len(email)))
-            self.adreses[email[0]][1].append((place, len(email)))
+                self.adreses[dest].add_recive_email(place, len(email))
+            self.adreses[email[0]].add_sent_email(place, len(email))
         print self.adreses
 
     def is_have(self, email):
         return email in self.adreses
 
+    def GetUserData(self, email):
+        return self.adreses[email]
+
+
+class EmailData():
+    def __init__(self):
+        self.recive_emails = []
+        self.sent_emails = []
+
+    def add_recive_email(self, place, length):
+        self.recive_emails.append((place, length))
+
+    def add_sent_email(self, place, length):
+        self.sent_emails.append((place, length))
+
+    def get_emails_num(self):
+        return len(self.recive_emails)
+
+    def get_emails_sum_length(self):
+        return sum(b[2] for b in self.recive_emails)
+
+    def get_email(self, place):
+        return self.recive_emails[-place]
+
+    def IsExistRecive(self, index):
+        return len(self.recive_emails) >= index
+
+    def get_emails_length(self, index):
+        return self.recive_emails[-index][1]
 
 def main():
     pass

@@ -5,7 +5,7 @@ from ttk import *
 import socket
 import time
 import datetime
-from log import log_file
+from log import LogFile
 
 ENDINGS = ['.com', '.co.il']
 SERVER_IP= "127.0.0.1"
@@ -204,7 +204,7 @@ def thread_client():
     prrove thet the server treading works
     """
     global log
-    log = log_file("client.log", '%(levelname)s:%(message)s')
+    log = LogFile("client.log", '%(levelname)s:%(message)s')
     from threading import Thread
     for send in range(1, 10, 1):
         thread = Thread(target=send_email, args=("aaa@aaa.com", 'adib', "bbb@aaa.com", "text", "my first client"+ str(send)))
@@ -217,7 +217,7 @@ def GUI():
     name = 'adi'
     sender = 'aaa@aaa.com'
     global log
-    log = log_file("client.log", '%(levelname)s:%(message)s')
+    log = LogFile("client.log", '%(levelname)s:%(message)s')
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client_socket.connect((SERVER_IP, SERVER_PORT))
