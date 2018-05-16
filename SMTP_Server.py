@@ -10,7 +10,7 @@ import socket
 
 sys.path.append(r'.')
 from log import LogFile
-from log import DataFile
+from log import Database
 
 from threading import Thread
 

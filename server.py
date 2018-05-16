@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from log import LogFile
-from log import DataFile
+from log import Database
 from threading import Thread
 from SMTP_Server import main_loop
 from POP3_server import main2
@@ -9,12 +9,10 @@ import logging
 
 def main():
     """
-    Add Documentation here
+    the main server script.
+    create the database and run both of the servers
     """
-
-
-
-    database = DataFile("data.txt")
+    database = Database("data.txt")
     log1 = LogFile("smtp.log", '%(thread)d %(levelname)s:%(message)s')
     log2 = LogFile("pop3.log", '%(levelname)s:%(message)s')
     thread = Thread(target=main_loop, args=(database, log1))

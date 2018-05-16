@@ -13,7 +13,7 @@ import threading
 class LogFile(object):
     def __init__(self, file_name, forma):
         self.logger = logging.getLogger(file_name[:-3])
-        formatter = logging.Formatter('%(asctime)s : %(message)s')
+        formatter = logging.Formatter(forma)
         fileHandler = logging.FileHandler(file_name, mode='w')
         fileHandler.setFormatter(formatter)
         streamHandler = logging.StreamHandler()
@@ -30,7 +30,6 @@ class LogFile(object):
         :param message: the message to log
         :param level: the level of loggin between 1 to 5
         """
-        print message
         with self.lock:
             if level == 1:
                 self.logger.debug(str(message))
@@ -54,7 +53,6 @@ class DataFile(object):
             self.length = 0
         self.file_name = file_name
         self.length = os.stat(file_name).st_size
-        self.adreses = {'bbb@aaa.com': EmailData(), "aaa@aaa.com": EmailData()}
         self.lock = threading.Lock()
 
     def add(self, data):
@@ -67,18 +65,27 @@ class DataFile(object):
                 handel.write(data)
                 self.length += len(data)
 
-    def read_position(self, pos, length):
+    def read_position(self, place, length):
         """
-        :param pos: the position to start reading
+        :param place: the position to start reading
         :param length: the lengh of the messege to read
         """
         with open(self.file_name, 'r') as handel:
-            handel.seek(pos)
+            handel.seek(place)
             data = handel.read(length)
-        print data
+        return data
 
     def get_file_len(self):
         return self.length
+
+
+class Database(object):
+    def __init__(self, file_name):
+        self.data_file = DataFile(file_name)
+        self.adreses = {'bbb@aaa.com': EmailData(self.data_file), "aaa@aaa.com": EmailData(self.data_file)}
+        self.lock = threading.Lock()
+
+
 
     def add_email(self, email):
         """
@@ -87,19 +94,19 @@ class DataFile(object):
         :return: add the email to the database and return his place in file, return the place of the email
         """
         place = self.add_to_database(email)
-        self.add_to_dicsionery(place, email)
+        self.add_to_dicsionery(place, email) # the place of the email start will be the len of the file now +1
         return place
 
     def add_to_database(self, email):
         """
         add the email to the database file
         :param email:the email opn list. the sender, list of resevers and the data.
-        :return: add the email to the database and return his place in file
+        :return: add the email to the database and return his place in started
         FIXME: what if the email not in list??
         """
-        lengh = self.get_file_len()
-        self.add(email[2])
-        return lengh
+        lengh = self.data_file.get_file_len()
+        self.data_file.add(email[2])
+        return lengh + 1
 
     def add_to_dicsionery(self, place, email):
         """
@@ -119,13 +126,13 @@ class DataFile(object):
         return email in self.adreses
 
     def GetUserData(self, email):
-        print type(self.adreses[email])
         return self.adreses[email]
 
 
 class EmailData(object):
-    def __init__(self):
-        self.recive_emails = []
+    def __init__(self, data_file):
+        self.data_file = data_file
+        self.recive_emails = [] # arry of tuples (email place,email lengh)
         self.sent_emails = []
 
     def add_recive_email(self, place, length):
@@ -141,8 +148,8 @@ class EmailData(object):
     def get_emails_sum_length(self):
         return sum(b[1] for b in self.recive_emails)
 
-    def get_email(self, place):
-        return self.recive_emails[-place]
+    def get_email(self, place): #FIXME: alse get the . of the email above
+        return self.data_file.read_position(self.recive_emails[-place][0], self.recive_emails[-place][1])
 
     def get_emails(self):
         return self.recive_emails

@@ -12,7 +12,7 @@ LOGIN_MESSAGE = "+OK POP3 server ready"
 USER_EXIST = "+OK User accepted"
 NO_SUCH_FILE = "-ERR no such message, only {0} messages in maildrop"
 NO_SUCH_USER = "-ERR no such email adress"
-
+SING_OFF = "+OK dewey POP3 server signing off"
 
 def receive(client_socket, func):
     """
@@ -51,7 +51,7 @@ def HendelClient(client_socket, client_address):
     user, eror = login(client_socket)
 
     if eror != "+OK":
-        print 'dont find user'
+        print 'dont find user' #FIXME: send eroer
     user_data = database.GetUserData(user)
     print user_data
     data = receive(client_socket, lambda m: "\r\n" not in m)
@@ -64,6 +64,7 @@ def HendelClient(client_socket, client_address):
     responce += ")"
     client_socket.sendall(responce)
     log2.log("SEND:" + responce, 1)
+    data = receive(client_socket, lambda m: "\r\n" not in m)
     while data != "QUIT\r\n":
         if data[:4] == "LIST":
             if data == "LIST\r\n":
@@ -90,11 +91,29 @@ def HendelClient(client_socket, client_address):
                     responce = NO_SUCH_FILE.format(user_data.get_emails_num())
                     client_socket.sendall(responce)
                     log2.log("SEND:" + responce, 1)
+        elif data[:4] == "RETR" and any(char.isdigit() for char in data):
+            index = filter(lambda char: char.isdigit(), data)
+            index = int(index)
+            print index
+            responce = "+OK "
+            responce += str(user_data.get_email_length(index))
+            responce += " octets"
+            client_socket.sendall(responce)
+            log2.log("SEND:" + responce, 1)
+            email = user_data.get_email(index) #FIXME: what if there is no email in this index??
+            print email
+            client_socket.sendall(email)
+            log2.log("SEND:" + email, 1)
 
         elif data == "":
             pass
-
         data = receive(client_socket, lambda m: "\r\n" not in m)
+
+    client_socket.sendall(SING_OFF)
+    log2.log("SEND:"+SING_OFF, 1)
+    client_socket.close()
+
+
 
 
 
