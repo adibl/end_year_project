@@ -154,8 +154,13 @@ def valid_destinasions(client_socket, destination):
     return unvalid_emails
 
 
-#not in use
 def send_email(client_socket):
+    """
+    send the email for ceck perpeses
+    :param client_socket: the comm socket
+    """
+
+
     dest_box, subject_box, text_box, f = send_email_GUI()
     dests = dest_box.get().split(" ")
     unvalid_dests = valid_destinasions(client_socket, dests)

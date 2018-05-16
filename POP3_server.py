@@ -52,7 +52,7 @@ def HendelClient(client_socket, client_address):
 
     if eror != "+OK":
         print 'dont find user' #FIXME: send eroer
-    user_data = database.GetUserData(user)
+    user_data = database.get_user_data(user)
     print user_data
     data = receive(client_socket, lambda m: "\r\n" not in m)
     if not data == "START\r\n":
