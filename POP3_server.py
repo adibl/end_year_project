@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from threading import Thread
-from SMTP_Server import database
 import socket
 from log import LogFile
 
@@ -38,8 +37,6 @@ def login(client_socket):
             client_socket.sendall(NO_SUCH_USER)
             log2.log("SEND:" + NO_SUCH_USER, 1)
             data = receive(client_socket, lambda m: "\r\n" not in m)
-            print "d" +data
-            print "u" +user
             user = data[data.find(" ") + 1:data.find("\r\n")]
 
         client_socket.sendall(USER_EXIST)
@@ -56,6 +53,7 @@ def HendelClient(client_socket, client_address):
     if eror != "+OK":
         print 'dont find user'
     user_data = database.GetUserData(user)
+    print user_data
     data = receive(client_socket, lambda m: "\r\n" not in m)
     if not data == "START\r\n":
         pass #FIXME:
@@ -82,9 +80,9 @@ def HendelClient(client_socket, client_address):
                 index = int(index)
                 if user_data.IsExistRecive(index):
                     responce = "+OK "
-                    responce += index
+                    responce += str(index)
                     responce += " massages ("
-                    responce += user_data.get_email_length(index)
+                    responce += str(user_data.get_email_length(index))
                     responce += ")"
                     client_socket.sendall(responce)
                     log2.log("SEND:" + responce, 1)
@@ -101,10 +99,14 @@ def HendelClient(client_socket, client_address):
 
 
 
-def main():
+def main2(d, l):
     """
     Add Documentation here
     """
+    global database
+    database = d
+    global log2
+    log2 = l
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         server_socket.bind((IP, PORT))
@@ -123,6 +125,4 @@ def main():
 
 
 if __name__ == '__main__':
-    global log2
-    log2 = LogFile("pop3.log", '%(levelname)s:%(message)s')
-    main()
+    pass

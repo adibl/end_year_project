@@ -6,7 +6,6 @@ ready
 """
 import sys
 import socket
-import time
 
 
 sys.path.append(r'.')
@@ -14,10 +13,7 @@ from log import LogFile
 from log import DataFile
 
 from threading import Thread
-global database
-database = DataFile("data.txt")
-global log
-log = LogFile("smtp.log", '%(thread)d %(levelname)s:%(message)s')
+
 
 LOG_FILE = 'server.log'
 USERS_LINE_SEPARATOR = '\n'
@@ -185,23 +181,27 @@ def get_email(client_socket, data):
         return False
     client_socket.send(COMPLETED_SUCCESSFULLY)
     log.log("SEND:" + COMPLETED_SUCCESSFULLY, 1)
+
     return [sender, dests, data]
 
 
-def main_loop():
+def main_loop(d, l):
     """
     the main server loop, waits for messages from clients and acts according
     :return: None, endless loop
     """
+    global database
+    database = d
+    global log
+    log = l
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         server_socket.bind((IP, PORT))
         server_socket.listen(QUEUE_SIZE)
         log.log("Listening for connections on port %d" % PORT, 2)
-
         while True:
             client_socket, client_address = server_socket.accept()
-            thread = Thread(target=hendel_client, args=(client_socket,client_address))
+            thread = Thread(target=hendel_client, args=(client_socket, client_address))
             log.log("new connection from " + str(client_address), 2)
             thread.start()
     except socket.error as err:
@@ -218,4 +218,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    print 5

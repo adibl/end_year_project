@@ -4,21 +4,25 @@ date:
 """
 
 import logging
-import datetime
 import os
 import threading
 # remember to do assertsa
 # update documentation
 
 
-class LogFile():
-    def __init__(self, file_name, format):
-        logging.basicConfig(level=logging.DEBUG, format=format)
-        self.logger = logging.getLogger()
+class LogFile(object):
+    def __init__(self, file_name, forma):
+        self.logger = logging.getLogger(file_name[:-3])
+        formatter = logging.Formatter('%(asctime)s : %(message)s')
+        fileHandler = logging.FileHandler(file_name, mode='w')
+        fileHandler.setFormatter(formatter)
+        streamHandler = logging.StreamHandler()
+        streamHandler.setFormatter(formatter)
+
         self.logger.setLevel(logging.DEBUG)
-        handler = logging.FileHandler(file_name)
-        self.logger.addHandler(handler)
-        self.logger.info(datetime.datetime.now())
+
+        self.logger.addHandler(fileHandler)
+        self.logger.addHandler(streamHandler)
         self.lock = threading.Lock()
 
     def log(self, message, level):
@@ -26,6 +30,7 @@ class LogFile():
         :param message: the message to log
         :param level: the level of loggin between 1 to 5
         """
+        print message
         with self.lock:
             if level == 1:
                 self.logger.debug(str(message))
@@ -41,7 +46,7 @@ class LogFile():
                 print message
 
 
-class DataFile():
+class DataFile(object):
     def __init__(self, file_name):
         if not os.path.isfile(file_name):
             handel = open(file_name, 'w')
@@ -49,7 +54,7 @@ class DataFile():
             self.length = 0
         self.file_name = file_name
         self.length = os.stat(file_name).st_size
-        self.adreses = {"aaa@aaa.com": EmailData(), "bbb@aaa.com": EmailData()}
+        self.adreses = {'bbb@aaa.com': EmailData(), "aaa@aaa.com": EmailData()}
         self.lock = threading.Lock()
 
     def add(self, data):
@@ -103,26 +108,29 @@ class DataFile():
         :param email: the email that is in the file
         :return: none
         """
+        print "aa" + str(email)
         with self.lock:
             for dest in email[1]:
-                self.adreses[dest].add_recive_email(place, len(email))
-            self.adreses[email[0]].add_sent_email(place, len(email))
+                self.adreses[dest].add_recive_email(place, len(email[2]))
+            self.adreses[email[0]].add_sent_email(place, len(email[2]))
         print self.adreses
 
     def is_have(self, email):
         return email in self.adreses
 
     def GetUserData(self, email):
+        print type(self.adreses[email])
         return self.adreses[email]
 
 
-class EmailData():
+class EmailData(object):
     def __init__(self):
         self.recive_emails = []
         self.sent_emails = []
 
     def add_recive_email(self, place, length):
         self.recive_emails.append((place, length))
+        print "add" + str(self.recive_emails)
 
     def add_sent_email(self, place, length):
         self.sent_emails.append((place, length))
@@ -131,16 +139,24 @@ class EmailData():
         return len(self.recive_emails)
 
     def get_emails_sum_length(self):
-        return sum(b[2] for b in self.recive_emails)
+        return sum(b[1] for b in self.recive_emails)
 
     def get_email(self, place):
         return self.recive_emails[-place]
 
+    def get_emails(self):
+        return self.recive_emails
+
     def IsExistRecive(self, index):
         return len(self.recive_emails) >= index
 
-    def get_emails_length(self, index):
+    def get_email_length(self, index):
         return self.recive_emails[-index][1]
+
+    def __str__(self):
+        return str(self.recive_emails) + str(self.sent_emails)
+
+
 
 def main():
     pass
