@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 from threading import Thread
 import socket
-from log import LogFile
 
 
 
 IP = '0.0.0.0'
 PORT = 1500
 QUEUE_SIZE = 10
-LOGIN_MESSAGE = "+OK POP3 server ready"
-USER_EXIST = "+OK User accepted"
-NO_SUCH_FILE = "-ERR no such message, only {0} messages in maildrop"
-NO_SUCH_USER = "-ERR no such email adress"
-SING_OFF = "+OK dewey POP3 server signing off"
+LOGIN_MESSAGE = "+OK POP3 server ready\r\n"
+USER_EXIST = "+OK User accepted\r\n"
+NO_SUCH_FILE = "-ERR no such message, only {0} messages in maildrop\r\n"
+NO_SUCH_USER = "-ERR no such email adress\r\n"
+SING_OFF = "+OK dewey POP3 server signing off\r\n"
 
 def receive(client_socket, func):
     """
@@ -55,13 +54,13 @@ def HendelClient(client_socket, client_address):
     user_data = database.get_user_data(user)
     print user_data
     data = receive(client_socket, lambda m: "\r\n" not in m)
-    if not data == "START\r\n":
+    if not data == "STAT\r\n":
         pass #FIXME:
     responce = "+OK "
     responce += str(user_data.get_emails_num())
     responce += " massages ("
     responce += str(user_data.get_emails_sum_length())
-    responce += ")"
+    responce += ")\r\n"
     client_socket.sendall(responce)
     log2.log("SEND:" + responce, 1)
     data = receive(client_socket, lambda m: "\r\n" not in m)
@@ -95,15 +94,20 @@ def HendelClient(client_socket, client_address):
             index = filter(lambda char: char.isdigit(), data)
             index = int(index)
             print index
-            responce = "+OK "
-            responce += str(user_data.get_email_length(index))
-            responce += " octets"
-            client_socket.sendall(responce)
-            log2.log("SEND:" + responce, 1)
-            email = user_data.get_email(index) #FIXME: what if there is no email in this index??
-            print email
-            client_socket.sendall(email)
-            log2.log("SEND:" + email, 1)
+            if not user_data.IsExistRecive(index):
+                responce = NO_SUCH_FILE.format(user_data.get_emails_num())
+                client_socket.sendall(responce)
+                log2.log("SEND:" + responce, 1)
+            else:
+                responce = "+OK "
+                responce += str(user_data.get_email_length(index))
+                responce += " octets\r\n"
+                client_socket.sendall(responce)
+                log2.log("SEND:" + responce, 1)
+                email = user_data.get_email(index) #FIXME: what if there is no email in this index??
+                print email
+                client_socket.sendall(email)
+                log2.log("SEND:" + email, 1)
 
         elif data == "":
             pass

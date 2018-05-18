@@ -10,31 +10,27 @@ from log import LogFile
 ENDINGS = ['.com', '.co.il']
 SERVER_IP= "127.0.0.1"
 SERVER_PORT = 20011
+POP3_PORT = 1500
 
-"""
+
 def login():
+    print "log_in"
     window = Tk()
-    f = Frame(window)
-    f.pack()
     window.title("login")
     window.minsize(300, 300)
+    f = Frame(window)
+    f.pack()
     l1 = Label(f, text='name: ')
-    l2 = Label(f, text='pasword: ')
     t1 = Entry(f, textvariable=StringVar())
-    t2 = Entry(f, show='*', textvariable=StringVar())
-    button1 = Button(f, text='Log-in', compound='bottom', command= lambda: verify(t1.get(), t2.get(), window))
-    button2 = Button(f, text='Sign-in', compound='bottom', command= lambda: Sign_up(f, window))
-    s1 = Scrollbar.pack(side=RIGHT, fill=Y)
-
+    button1 = Button(f, text='Log-in', compound='bottom', command=f.quit)
     l1.pack()
     t1.pack()
-    l2.pack()
-    t2.pack()
     button1.pack()
-    button2.pack()
-    s1.pack()
+    print 'window'
     f.mainloop()
+    return (t1, f, window)
 
+"""
 def Sign_up(f, window):
     f.destroy()
     f =Frame(window)
@@ -56,8 +52,63 @@ def Sign_up(f, window):
     f.mainloop()
     """
 
+def verify(email_box, client_socket):
+    email = email_box.get()
+    client_socket.sendall("USER " + email + "\r\n")
+    log.log("USER " + email, 1)
+    data = receive(client_socket, lambda d: "\r\n" not in d)
+    return data[:3] == "+OK"
+
+def wrong_email(f):
+    l4 = Label(f, text="wrong Email adreses", foreground="red")
+    l4.pack(side=BOTTOM)
+    f.mainloop()
+
+
+
+def POP3():
+    name = 'adi'
+    sender = 'aaa@aaa.com'
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        client_socket.connect((SERVER_IP, POP3_PORT))
+        data = receive(client_socket, lambda data: "\r\n" not in data)
+        if not data[:3] == "+OK":
+            pass #FIXME:
+        screen = login()
+        while not verify(screen[0], client_socket):
+            wrong_email(screen[0])
+        screen[2].destroy()
+
+        print 'login'
+        client_socket.sendall("STAT\r\n")
+        log.log("STAT\r\n", 1)
+        data = receive(client_socket)
+        emails = []
+        for num in xrange(1,10,1):
+            client_socket.sendall("RETR" + str(num) + "\r\n")
+            log.log("RETR" + str(num) + "\r\n", 1)
+            data = receive(client_socket, lambda data: "\r\n" not in data)
+            if data[:3] != "+OK":
+                break
+            else:
+                length = filter(lambda char: char.isdigit(), data)
+                print length
+                data = receive(client_socket, lambda d: "\r\n." not in d and "\n\n." not in d)
+                print data
+                emails.append(data)
+        print emails
+        #TODO: GUI thet give you the first 10 emails
+    except socket.error as msg:
+        print 'error in communication with server - ' + str(msg)
+    finally:
+        time.sleep(1)
+        client_socket.close()
+
+
 def check_valid(email):
     return '@' in email and any(end in email for end in ENDINGS)
+
 
 def send_email_GUI():
     """
@@ -78,21 +129,20 @@ def send_email_GUI():
     t2 = Entry(f, textvariable=StringVar())
     t3 = ScrolledText.ScrolledText(f)
     button1 = Button(f, text='send mail', compound='bottom', command=f.quit)
-    l1.grid()
-    t1.grid(row=0, column=1, sticky=W+E+N+S)
-    l2.grid(row=1, column=0)
-    t2.grid(row=1, column=1, sticky=W+E+N+S)
-    l3.grid(column=1)
-    t3.grid(column=0, columnspan=3)
-    button1.grid(column=1)
-    f.columnconfigure(0, weight=1, uniform='third')
-    f.columnconfigure(1, weight=2, uniform='third')
-    f.columnconfigure(2, weight=1, uniform='third')
+    l1.pack()
+    t1.pack()
+    l2.pack()
+    t2.pack()
+    l3.pack()
+
+
+    t3.pack()
+    button1.pack()
     f.mainloop()
     return (t1, t2, t3, f)
 
 
-def receive(client_socket, func):
+def receive(client_socket, func=lambda data: "\r\n" not in data):
     """
     :param func: the exit funcsion of the while loop.
     :param client_socket: the comm socket
@@ -166,7 +216,7 @@ def send_email(client_socket):
     unvalid_dests = valid_destinasions(client_socket, dests)
     while unvalid_dests is not True:
         l4 = Label(f, text="wrong Email adreses are:" + str(unvalid_dests)[1:-1], foreground="red")
-        l4.grid(row=0, column=2)
+        l4.pack()
         f.mainloop()
         dests = dest_box.get().split(" ")
         unvalid_dests = valid_destinasions(client_socket, dests)
@@ -194,7 +244,7 @@ def send_email2(masseges):
         client_socket.connect((SERVER_IP, SERVER_PORT))
         # send the message
         for m in masseges:
-            time.sleep(0.5)
+            time.sleep(0.1)
             client_socket.sendall(m)
             print m
     except socket.error as msg:
@@ -215,14 +265,15 @@ def thread_client():
         thread = Thread(target=send_email, args=("aaa@aaa.com", 'adib', "bbb@aaa.com", "text", "my first client"+ str(send)))
         thread.start()
 
-def GUI():
+
+
+
+def SMTP():
     """
     the main comm punc. connect to the server and do handshake
     """
     name = 'adi'
     sender = 'aaa@aaa.com'
-    global log
-    log = LogFile("client.log", '%(levelname)s:%(message)s')
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client_socket.connect((SERVER_IP, SERVER_PORT))
@@ -266,4 +317,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    global log
+    log = LogFile("client.log", '%(levelname)s:%(message)s')
+    SMTP()
+    POP3()

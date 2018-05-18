@@ -4,19 +4,10 @@ Date: 1/3/18
 description: skeleton server which handles multiple clients by using select.
 ready
 """
-import sys
 import socket
-
-
-sys.path.append(r'.')
-from log import LogFile
-from log import Database
-
 from threading import Thread
 
 
-LOG_FILE = 'server.log'
-USERS_LINE_SEPARATOR = '\n'
 IP = '0.0.0.0'
 PORT = 20011
 QUEUE_SIZE = 10
@@ -24,7 +15,6 @@ READ_SIZE = 1
 
 
 DOMINS = ".com"
-ADRESES = {"aaa@aaa.com": [[], []], "bbb@aaa.com": [[], []]}
 SENDER_HEADER = "MAIL FROM:"
 DEST_HEADER = "RCPT TO:"
 
@@ -44,6 +34,7 @@ def receive(client_socket, func):
     :return: the data thet was recived from the socket
     """
     #FIXME: add return none if timeout (add timeout) cann end the prog with sys.exit()
+    #client_socket.settimeout(SOCKET_TIMEOUT)
     data = ""
     while func(data):
         data += client_socket.recv(1)
@@ -58,23 +49,27 @@ def hendel_client(client_socket, aa):
     :param data: the data thet was get from the user befor
     :return: true if the conecsion cloze and false other
     """
-    if not handshake(client_socket):
-        client_socket.close()
-        return
-    while True:
-        data2 = receive(client_socket, lambda x: "\r\n" not in x)
-        log.log("RECV:" + data2, 1)
-        if ":" in data2:
-            email = get_email(client_socket, data2)
-            if email is not False:
-                place = database.add_email(email)
-                log.log("gat email from " + email[0] + " in place " + str(place), 2)
-            else:
-                client_socket.close()
-                return
-        elif data2 == "QUIT\r\n":
+    try:
+        if not handshake(client_socket):
             client_socket.close()
             return
+        while True:
+            data2 = receive(client_socket, lambda x: "\r\n" not in x)
+            log.log("RECV:" + data2, 1)
+            if ":" in data2:
+                email = get_email(client_socket, data2)
+                if email is not False:
+                    place = database.add_email(email)
+                    log.log("gat email from " + email[0] + " in place " + str(place), 2)
+                else:
+                    client_socket.close()
+                    return
+            elif data2 == "QUIT\r\n":
+                client_socket.close()
+                return
+    except socket.error as err:
+        log.log("socket eror", 1)
+        client_socket.close()
 
 
 def handshake(client_socket):
@@ -137,7 +132,7 @@ def get_email(client_socket, data):
     if SENDER_HEADER not in data:
         return False
     sender = data[data.find("<")+1:data.find(">")]
-    while sender not in ADRESES.keys():
+    while not database.is_have(sender):
         client_socket.send(DESTINATION_INVALID)
         log.log("SEND:" + DESTINATION_INVALID, 1)
         data = receive(client_socket, lambda data:"\r\n" not in data)
@@ -153,7 +148,7 @@ def get_email(client_socket, data):
         data = receive(client_socket, lambda data:"\r\n" not in data)
         if data[:len(DEST_HEADER)] == DEST_HEADER:
             ds = data[data.find("<")+1:data.find(">")]
-            if ds in ADRESES:
+            if database.is_have(ds):
                 dests.append(ds)
                 client_socket.send(COMPLETED_SUCCESSFULLY)
                 log.log("SEND:" + COMPLETED_SUCCESSFULLY, 1)
@@ -214,7 +209,6 @@ def main():
     """
     Add Documentation here
     """
-    main_loop()
 
 
 if __name__ == '__main__':

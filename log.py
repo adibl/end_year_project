@@ -6,6 +6,7 @@ date:
 import logging
 import os
 import threading
+import sys
 # remember to do assertsa
 # update documentation
 
@@ -61,9 +62,9 @@ class DataFile(object):
         :param data:the data to add to the database
         """
         with self.lock:
-            with open(self.file_name, 'a+') as handel:
+            with open(self.file_name, 'ab') as handel:
                 handel.write(data)
-                self.length += len(data)
+                self.length += len(data.encode('utf-8'))
 
     def read_position(self, place, length):
         """
@@ -92,6 +93,7 @@ class Database(object):
         :return: add the email to the database and return his place in file, return the place of the email
         """
         place = self.add_to_database(email)
+        print place
         self.add_to_dicsionery(place, email)
         return place
 
@@ -104,7 +106,7 @@ class Database(object):
         """
         lengh = self.data_file.get_file_len()
         self.data_file.add(email[2])
-        return lengh + 1  # the place of the email start will be the len of the file now +1
+        return lengh
 
     def add_to_dicsionery(self, place, email):
         """
@@ -116,11 +118,11 @@ class Database(object):
         print "aa" + str(email)
         with self.lock:
             for dest in email[1]:
-                self.adreses[dest].add_recive_email(place, len(email[2]))
-            self.adreses[email[0]].add_sent_email(place, len(email[2]))
+                self.adreses[dest].add_recive_email(place, len(email[2].encode('utf-8')))
+            self.adreses[email[0]].add_sent_email(place, len(email[2].encode('utf-8')))
 
     def is_have(self, email):
-        return email in self.adreses
+        return self.adreses.has_key(email)
 
     def get_user_data(self, email):
         return self.adreses[email]
@@ -163,7 +165,7 @@ class EmailData(object):
         """
         return sum(b[1] for b in self.recive_emails)
 
-    def get_email(self, place): #FIXME: alse get the . of the email above
+    def get_email(self, place):
         """
         :param place: the place of the email in the top of the mailbox, 1 for the last email received
         return: return the email from place x in the mail box
@@ -199,4 +201,5 @@ def main():
     pass
 
 if __name__ == '__main__':
+
     main()
