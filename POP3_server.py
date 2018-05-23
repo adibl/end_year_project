@@ -42,80 +42,84 @@ def login(client_socket):
         log2.log("SEND:" + USER_EXIST, 1)
         return user, "+OK"
     else:
-        pass #FIXME:
+        return None, "unvalid request"
 
 
 
 def HendelClient(client_socket, client_address):
-    user, eror = login(client_socket)
-
-    if eror != "+OK":
-        print 'dont find user' #FIXME: send eroer
-    user_data = database.get_user_data(user)
-    print user_data
-    data = receive(client_socket, lambda m: "\r\n" not in m)
-    if not data == "STAT\r\n":
-        pass #FIXME:
-    responce = "+OK "
-    responce += str(user_data.get_emails_num())
-    responce += " massages ("
-    responce += str(user_data.get_emails_sum_length())
-    responce += ")\r\n"
-    client_socket.sendall(responce)
-    log2.log("SEND:" + responce, 1)
-    data = receive(client_socket, lambda m: "\r\n" not in m)
-    while data != "QUIT\r\n":
-        if data[:4] == "LIST":
-            if data == "LIST\r\n":
-                responce = "+OK "
-                responce += str(user_data.get_emails_num())
-                responce += " massages ("
-                responce += str(user_data.get_emails_sum_length())
-                responce += ")"
-                client_socket.sendall(responce)
-                log2.log("SEND:" + responce, 1)
-            elif any(char.isdigit() for char in data):
-                print 'LIST x'
-                index = filter(lambda char: char.isdigit(), data)
-                index = int(index)
-                if user_data.IsExistRecive(index):
+    try:
+        user, eror = login(client_socket)
+        if eror != "+OK":
+            client_socket.sendall("-ERR" + eror)
+            log2.log("-ERR" + eror)
+            return
+        user_data = database.get_user_data(user)
+        print user_data
+        data = receive(client_socket, lambda m: "\r\n" not in m)
+        if not data == "STAT\r\n":
+            client_socket.sendall("-ERR" + eror)
+            log2.log("-ERR" + eror)
+            return
+        responce = "+OK "
+        responce += str(user_data.get_emails_num())
+        responce += " massages ("
+        responce += str(user_data.get_emails_sum_length())
+        responce += ")\r\n"
+        client_socket.sendall(responce)
+        log2.log("SEND:" + responce, 1)
+        data = receive(client_socket, lambda m: "\r\n" not in m)
+        while data != "QUIT\r\n":
+            if data[:4] == "LIST":
+                if data == "LIST\r\n":
                     responce = "+OK "
-                    responce += str(index)
+                    responce += str(user_data.get_emails_num())
                     responce += " massages ("
-                    responce += str(user_data.get_email_length(index))
+                    responce += str(user_data.get_emails_sum_length())
                     responce += ")"
                     client_socket.sendall(responce)
                     log2.log("SEND:" + responce, 1)
-                else:
+                elif any(char.isdigit() for char in data):
+                    print 'LIST x'
+                    index = filter(lambda char: char.isdigit(), data)
+                    index = int(index)
+                    if user_data.IsExistRecive(index):
+                        responce = "+OK "
+                        responce += str(index)
+                        responce += " massages ("
+                        responce += str(user_data.get_email_length(index))
+                        responce += ")"
+                        client_socket.sendall(responce)
+                        log2.log("SEND:" + responce, 1)
+                    else:
+                        responce = NO_SUCH_FILE.format(user_data.get_emails_num())
+                        client_socket.sendall(responce)
+                        log2.log("SEND:" + responce, 1)
+            elif data[:4] == "RETR" and any(char.isdigit() for char in data):
+                index = filter(lambda char: char.isdigit(), data)
+                index = int(index)
+                print index
+                if not user_data.IsExistRecive(index):
                     responce = NO_SUCH_FILE.format(user_data.get_emails_num())
                     client_socket.sendall(responce)
                     log2.log("SEND:" + responce, 1)
-        elif data[:4] == "RETR" and any(char.isdigit() for char in data):
-            index = filter(lambda char: char.isdigit(), data)
-            index = int(index)
-            print index
-            if not user_data.IsExistRecive(index):
-                responce = NO_SUCH_FILE.format(user_data.get_emails_num())
-                client_socket.sendall(responce)
-                log2.log("SEND:" + responce, 1)
-            else:
-                responce = "+OK "
-                responce += str(user_data.get_email_length(index))
-                responce += " octets\r\n"
-                client_socket.sendall(responce)
-                log2.log("SEND:" + responce, 1)
-                email = user_data.get_email(index) #FIXME: what if there is no email in this index??
-                print email
-                client_socket.sendall(email)
-                log2.log("SEND:" + email, 1)
+                else:
+                    responce = "+OK "
+                    responce += str(user_data.get_email_length(index))
+                    responce += " octets\r\n"
+                    client_socket.sendall(responce)
+                    log2.log("SEND:" + responce, 1)
+                    email = user_data.get_email(index)
+                    print email
+                    client_socket.sendall(email)
+                    log2.log("SEND:" + email, 1)
 
-        elif data == "":
-            pass
-        data = receive(client_socket, lambda m: "\r\n" not in m)
-
-    client_socket.sendall(SING_OFF)
-    log2.log("SEND:"+SING_OFF, 1)
-    client_socket.close()
+            elif data == "":
+                pass
+            data = receive(client_socket, lambda m: "\r\n" not in m)
+    finally:
+        client_socket.sendall(SING_OFF)
+        log2.log("SEND:"+SING_OFF, 1)
+        client_socket.close()
 
 
 

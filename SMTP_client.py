@@ -6,6 +6,7 @@ import socket
 import time
 import datetime
 from log import LogFile
+import tkMessageBox
 
 ENDINGS = ['.com', '.co.il']
 SERVER_IP= "127.0.0.1"
@@ -13,22 +14,39 @@ SERVER_PORT = 20011
 POP3_PORT = 1500
 
 
-def login():
+def login(client_socket):
     print "log_in"
     window = Tk()
     window.title("login")
     window.minsize(300, 300)
     f = Frame(window)
     f.pack()
-    l1 = Label(f, text='name: ')
+    l1 = Label(f, text='email: ')
     t1 = Entry(f, textvariable=StringVar())
+    l2 = Label(f, text='name: ')
+    t2 = Entry(f, textvariable=StringVar())
     button1 = Button(f, text='Log-in', compound='bottom', command=f.quit)
     l1.pack()
     t1.pack()
+    l2.pack()
+    t2.pack()
     button1.pack()
     print 'window'
     f.mainloop()
-    return (t1, f, window)
+    email = t1.get()
+    if not verify(email, client_socket):
+        l4 = Label(f, text="wrong Email adreses", foreground="red")
+        l4.pack(side=BOTTOM)
+        f.mainloop()
+        email = t1.get()
+        while not verify(email, client_socket):
+            f.mainloop()
+    global user_email
+    user_email = email
+    global user_name
+    user_name = t2.get()
+    window.destroy()
+
 
 """
 def Sign_up(f, window):
@@ -52,18 +70,95 @@ def Sign_up(f, window):
     f.mainloop()
     """
 
-def verify(email_box, client_socket):
-    email = email_box.get()
+def verify(email, client_socket):
     client_socket.sendall("USER " + email + "\r\n")
     log.log("USER " + email, 1)
     data = receive(client_socket, lambda d: "\r\n" not in d)
     return data[:3] == "+OK"
 
-def wrong_email(f):
-    l4 = Label(f, text="wrong Email adreses", foreground="red")
-    l4.pack(side=BOTTOM)
-    f.mainloop()
 
+
+def show_email(email, f, window):
+    print email
+    f.pack_forget()
+    f2 = Frame(window)
+    f2.pack(expand=True, fill=BOTH)
+    l1 = Label(f2, text=email)
+    l1.pack()
+    l2 = Button(f2, text='return', command=f2.quit)
+    l2.pack()
+    f2.mainloop()
+    f2.pack_forget()
+    f.pack()
+
+
+def update_GUI(emails, client_socket, window, f):
+    f.pack_forget()
+    f2 = Frame(window)
+    f2.pack()
+    for email in emails:
+        text = ''
+        for line in email.splitlines():
+            if 'subject' in line:
+                text += line + '\r\n'
+        for line in email.splitlines():
+            if 'from' in line:
+                text += line + '\r\n'
+        l1 = Button(f2, text=text, command=lambda: show_email(email, f2, window))
+        l1.pack()
+    l2 = Button(f2, text="send email", command=lambda: SMTP())
+    l2.pack()
+    l3 = Button(f2, text="refrese", command=lambda: update_GUI(get_emails(client_socket, emails),client_socket,window , f2))
+    l3.pack()
+    l4 = Button(f2, text='exit', command=window.quit)
+    l4.pack()
+    f2.pack()
+    window.mainloop()
+
+
+def inbox_GUI(emails, client_socket):
+    print emails
+    window = Tk()
+    window.title("inbox")
+    window.minsize(1500, 1500)
+    f = Frame(window)
+    f.pack()
+    for email in emails:
+        text = ''
+        for line in email.splitlines():
+            if 'subject' in line:
+                text += line + '\r\n'
+        for line in email.splitlines():
+            if 'from' in line:
+                text += line + '\r\n'
+        l1 = Button(f, text=text, command=lambda: show_email(email, f, window))
+        l1.pack()
+    l2 = Button(f, text="send email", command=lambda: SMTP())
+    l2.pack()
+    l3 = Button(f, text="refrese", command=lambda: update_GUI(get_emails(client_socket, emails), client_socket, window, f) and window.quit)
+    l3.pack()
+    l4 = Button(f, text='exit', command=window.quit)
+    l4.pack()
+    window.mainloop()
+    window.destroy()
+
+
+def get_emails(client_socket, *emails2):
+    emails = emails2
+    emails = []
+    for num in xrange(1,10,1):
+        client_socket.sendall("RETR" + str(num) + "\r\n")
+        log.log("RETR" + str(num) + "\r\n", 1)
+        data = receive(client_socket, lambda data: "\r\n" not in data)
+        if data[:3] != "+OK":
+            break
+        else:
+            length = filter(lambda char: char.isdigit(), data)
+            print length
+            data = receive(client_socket, lambda d: "\r\n." not in d and "\n\n." not in d)
+            print data
+            emails.append(data)
+    return emails
 
 
 def POP3():
@@ -72,33 +167,20 @@ def POP3():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client_socket.connect((SERVER_IP, POP3_PORT))
-        data = receive(client_socket, lambda data: "\r\n" not in data)
+        data = receive(client_socket, lambda d: "\r\n" not in d)
         if not data[:3] == "+OK":
-            pass #FIXME:
-        screen = login()
-        while not verify(screen[0], client_socket):
-            wrong_email(screen[0])
-        screen[2].destroy()
-
+            tkMessageBox.showerror("Error", "server didn't connect")
+            return
+        login(client_socket)
         print 'login'
         client_socket.sendall("STAT\r\n")
         log.log("STAT\r\n", 1)
         data = receive(client_socket)
-        emails = []
-        for num in xrange(1,10,1):
-            client_socket.sendall("RETR" + str(num) + "\r\n")
-            log.log("RETR" + str(num) + "\r\n", 1)
-            data = receive(client_socket, lambda data: "\r\n" not in data)
-            if data[:3] != "+OK":
-                break
-            else:
-                length = filter(lambda char: char.isdigit(), data)
-                print length
-                data = receive(client_socket, lambda d: "\r\n." not in d and "\n\n." not in d)
-                print data
-                emails.append(data)
-        print emails
-        #TODO: GUI thet give you the first 10 emails
+        if not data[:3] == "+OK":
+            tkMessageBox.showerror("Error", "server fail")
+            return
+        emails = get_emails(client_socket)
+        inbox_GUI(emails, client_socket)
     except socket.error as msg:
         print 'error in communication with server - ' + str(msg)
     finally:
@@ -113,14 +195,13 @@ def check_valid(email):
 def send_email_GUI():
     """
     GUI + send the input from user to ceck in the server and wait for responce
-    :param client_socket: the comm socket
     """
     window = Tk()
     f = Frame(window)
     f.pack()
     window.title("send_email")
     window.minsize(1000, 1000)
-    f =Frame(window)
+    f = Frame(window)
     f.pack()
     l1 = Label(f, text='dest:')
     l2 = Label(f, text='head: ')
@@ -134,16 +215,15 @@ def send_email_GUI():
     l2.pack()
     t2.pack()
     l3.pack()
-
-
     t3.pack()
     button1.pack()
     f.mainloop()
-    return (t1, t2, t3, f)
+    return (t1, t2, t3, f, window)
 
 
 def receive(client_socket, func=lambda data: "\r\n" not in data):
     """
+
     :param func: the exit funcsion of the while loop.
     :param client_socket: the comm socket
     :return: the data thet was recived from the socket
@@ -168,6 +248,7 @@ def vaild_sender(client_socket, sender):
     if not data[:3] == "250":
         return data
     return True
+
 
 def handshake(client_socket, sender):
     """
@@ -196,7 +277,7 @@ def valid_destinasions(client_socket, destination):
     unvalid_emails = []
     for dest in destination:
         client_socket.sendall("RCPT TO:" + "<" + dest + ">" + "\r\n")
-        data = receive(client_socket, lambda data: "\r\n" not in data)
+        data = receive(client_socket, lambda d: "\r\n" not in d)
         if not data[:3] == "250":
             unvalid_emails.append(dest)
     if len(unvalid_emails) == 0:
@@ -209,9 +290,7 @@ def send_email(client_socket):
     send the email for ceck perpeses
     :param client_socket: the comm socket
     """
-
-
-    dest_box, subject_box, text_box, f = send_email_GUI()
+    dest_box, subject_box, text_box, f, window = send_email_GUI()
     dests = dest_box.get().split(" ")
     unvalid_dests = valid_destinasions(client_socket, dests)
     while unvalid_dests is not True:
@@ -230,6 +309,7 @@ def send_email(client_socket):
     email += "subject:" + subject + "\r\n"
     email += text_box.get(1.0, END)
     email += '\r\n.'
+    window.destroy()
     return email
 
 
@@ -244,7 +324,7 @@ def send_email2(masseges):
         client_socket.connect((SERVER_IP, SERVER_PORT))
         # send the message
         for m in masseges:
-            time.sleep(0.1)
+            time.sleep(0.2)
             client_socket.sendall(m)
             print m
     except socket.error as msg:
@@ -272,31 +352,33 @@ def SMTP():
     """
     the main comm punc. connect to the server and do handshake
     """
-    name = 'adi'
-    sender = 'aaa@aaa.com'
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client_socket.connect((SERVER_IP, SERVER_PORT))
         # send the message
-        #TODO: add the pop3 here. if he press on the send email go on
-        if not handshake(client_socket, sender):
-            print "unvalid handshake"   #FIXME: and GUI interfase
-        if not vaild_sender(client_socket, sender):
-            print "unvalid email adress"   #FIXME: and GUI interfase
-        email = "From:" + ' "' + name + '" ' + "<" + sender + ">" + "\r\n"
+        if not handshake(client_socket, user_email):
+            print "unvalid handshake"
+            tkMessageBox.showerror("Error", "server didn't connect")
+        if not vaild_sender(client_socket, user_email):
+            print "unvalid email adress"
+            tkMessageBox.showerror("Error", "your email is unvalid")
+        email = "From:" + ' "' + user_name + '" ' + "<" + user_email + ">" + "\r\n"
         email += send_email(client_socket)
 
         client_socket.sendall("DATA\r\n")
-        data = receive(client_socket, lambda data: "\r\n" not in data)
+        data = receive(client_socket, lambda d: "\r\n" not in d)
         if not data[:3] == "354":
-            print 'server error' #FIXME: and GUI interfase
+            print 'server error'
+            tkMessageBox.showerror("Error", "client problem")
         client_socket.sendall(email)
-        data = receive(client_socket, lambda data: "\r\n" not in data)
+        data = receive(client_socket, lambda d: "\r\n" not in d)
         if not data[:3] == "250":
-            print 'unvalid email' #FIXME: and GUI interfase
+            print 'unvalid email'
+            tkMessageBox.showerror("Error", "email can't send")
         print 'send'
     except socket.error as msg:
         print 'error in communication with server - ' + str(msg)
+        tkMessageBox.showerror("Error", "the server cloze comm")
     finally:
         time.sleep(1)
         client_socket.close()
@@ -319,5 +401,4 @@ def main():
 if __name__ == '__main__':
     global log
     log = LogFile("client.log", '%(levelname)s:%(message)s')
-    SMTP()
     POP3()
