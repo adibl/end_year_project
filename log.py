@@ -82,7 +82,7 @@ class DataFile(object):
 class Database(object):
     def __init__(self, file_name):
         self.data_file = DataFile(file_name)
-        self.adreses = {'bbb@aaa.com': EmailData(self.data_file), "aaa@aaa.com": EmailData(self.data_file)}
+        self.adreses = {'bbb@aaa.com': EmailData(self.data_file), "aaa@aaa.com": EmailData(self.data_file), "aaaa@aaa.com": EmailData(self.data_file)}
         self.lock = threading.Lock()
 
     def add_email(self, email):
@@ -91,6 +91,7 @@ class Database(object):
         :param email:the email opn list. the sender, list of receivers and the data (sender,[dests list],data)
         :return: add the email to the database and return his place in file, return the place of the email
         """
+        print email
         place = self.add_to_database(email)
         print place
         self.add_to_dicsionery(place, email)
@@ -195,6 +196,10 @@ class EmailData(object):
         return str(self.recive_emails) + str(self.sent_emails)
 
 
+def defult_start(database):
+    pass
+    database.add_email(['aaa@aaa.com', ['aaa@aaa.com', 'bbb@aaa.com'], 'from: "adib" <aaa@aaa.com>\r\nto:<aaa@aaa.com>\r\nto:<bbb@aaa.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nhelow\n\r\n.'])
+    database.add_email(['aaaa@aaa.com', ['aaa@aaa.com', 'bbb@aaa.com'], 'from: "adib" <aaaa@aaa.com>\r\nto:<aaa@aaa.com>\r\nto:<bbb@aaa.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nfake email\n\r\n.'])
 def main():
     pass
 

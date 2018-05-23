@@ -123,15 +123,15 @@ def inbox_GUI(emails, client_socket):
     window.minsize(1500, 1500)
     f = Frame(window)
     f.pack()
-    for email in emails:
+    for text_email in emails:
         text = ''
-        for line in email.splitlines():
+        for line in text_email.splitlines():
             if 'subject' in line:
                 text += line + '\r\n'
-        for line in email.splitlines():
+        for line in text_email.splitlines():
             if 'from' in line:
                 text += line + '\r\n'
-        l1 = Button(f, text=text, command=lambda: show_email(email, f, window))
+        l1 = Button(f, text=text, command=lambda email2=text_email: show_email(email2, f, window))
         l1.pack()
     l2 = Button(f, text="send email", command=lambda: SMTP())
     l2.pack()
