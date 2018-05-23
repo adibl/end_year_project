@@ -9,7 +9,7 @@ from log import LogFile
 import tkMessageBox
 
 ENDINGS = ['.com', '.co.il']
-SERVER_IP= "127.0.0.1"
+SERVER_IP = "127.0.0.1"
 SERVER_PORT = 20011
 POP3_PORT = 1500
 
@@ -70,12 +70,12 @@ def Sign_up(f, window):
     f.mainloop()
     """
 
+
 def verify(email, client_socket):
     client_socket.sendall("USER " + email + "\r\n")
     log.log("USER " + email, 1)
     data = receive(client_socket, lambda d: "\r\n" not in d)
     return data[:3] == "+OK"
-
 
 
 def show_email(email, f, window):
@@ -108,7 +108,7 @@ def update_GUI(emails, client_socket, window, f):
         l1.pack()
     l2 = Button(f2, text="send email", command=lambda: SMTP())
     l2.pack()
-    l3 = Button(f2, text="refrese", command=lambda: update_GUI(get_emails(client_socket, emails),client_socket,window , f2))
+    l3 = Button(f2, text="refrese", command=lambda: update_GUI(get_emails(client_socket, emails), client_socket, window, f2))
     l3.pack()
     l4 = Button(f2, text='exit', command=window.quit)
     l4.pack()
@@ -146,10 +146,10 @@ def inbox_GUI(emails, client_socket):
 def get_emails(client_socket, *emails2):
     emails = emails2
     emails = []
-    for num in xrange(1,10,1):
+    for num in xrange(1, 10, 1):
         client_socket.sendall("RETR" + str(num) + "\r\n")
         log.log("RETR" + str(num) + "\r\n", 1)
-        data = receive(client_socket, lambda data: "\r\n" not in data)
+        data = receive(client_socket, lambda d: "\r\n" not in d)
         if data[:3] != "+OK":
             break
         else:
@@ -342,10 +342,8 @@ def thread_client():
     log = LogFile("client.log", '%(levelname)s:%(message)s')
     from threading import Thread
     for send in range(1, 10, 1):
-        thread = Thread(target=send_email, args=("aaa@aaa.com", 'adib', "bbb@aaa.com", "text", "my first client"+ str(send)))
+        thread = Thread(target=send_email, args=("aaa@aaa.com", 'adib', "bbb@aaa.com", "text", "my first client" + str(send)))
         thread.start()
-
-
 
 
 def SMTP():
@@ -383,16 +381,17 @@ def SMTP():
         time.sleep(1)
         client_socket.close()
 
+
 def main():
     """
     this is a ceack func
     """
-    send_email2(["HELO relay.example.com\r\n", "MAIL FROM:<aaa@aaa.com>\r\n", "RCPT TO:<ccc@aaa.com>\r\n", "RCPT TO:<bbb@aaa.com>\r\n", "DATA\r\n", "From:<aaa@aaa.com>\r\nTo:<bbb@aaa.com>\r\nsubject:aa\r\nDate:123\r\nteast\r\n.\r\n", "QUIT\r\n"]) #yes- valid email sent
-    send_email2(["HELO relay.example.com", "MAIL FROM:<ccc@aaa.com>\r\n", "MAIL FROM:<bbb@aaa.com>\r\n", "RCPT TO:<aaa@aaa.com>\r\n", "DATA\r\n", "From:<bbb@aaa.com>\r\nTo:<aaa@aaa.com>\r\nsubject:aa\r\nDate:123\r\neast\r\n.\r\n\r\n.\r\n", "QUIT\r\n"]) #yes -valid email sent
-    send_email2(["HELO relay.example.com", "MAIL FROM:<bbb@aaa.com>\r\n", "RCPT TO:<aaa@aaa.com>\r\n", "QUIT\r\n"]) #yes unvalid
-    send_email2(["HELO relay.example.\r\n", "QUIT\r\n"]) #yes
+    send_email2(["HELO relay.example.com\r\n", "MAIL FROM:<aaa@aaa.com>\r\n", "RCPT TO:<ccc@aaa.com>\r\n", "RCPT TO:<bbb@aaa.com>\r\n", "DATA\r\n", "From:<aaa@aaa.com>\r\nTo:<bbb@aaa.com>\r\nsubject:aa\r\nDate:123\r\nteast\r\n.\r\n", "QUIT\r\n"])  # yes- valid email sent
+    send_email2(["HELO relay.example.com", "MAIL FROM:<ccc@aaa.com>\r\n", "MAIL FROM:<bbb@aaa.com>\r\n", "RCPT TO:<aaa@aaa.com>\r\n", "DATA\r\n", "From:<bbb@aaa.com>\r\nTo:<aaa@aaa.com>\r\nsubject:aa\r\nDate:123\r\neast\r\n.\r\n\r\n.\r\n", "QUIT\r\n"]) # yes -valid email sent
+    send_email2(["HELO relay.example.com", "MAIL FROM:<bbb@aaa.com>\r\n", "RCPT TO:<aaa@aaa.com>\r\n", "QUIT\r\n"]) # yes unvalid
+    send_email2(["HELO relay.example.\r\n", "QUIT\r\n"]) # yes
     send_email2(["QUIT\r\n"]) # yes
-    send_email2(["GET HTTP1.1\r\n"]) #yes
+    send_email2(["GET HTTP1.1\r\n"]) # yes
     send_email2(["HELO relay.example.com", "MAIL FROM:<ccc@aaa.com>\r\n", "MAIL FROM:<bbb@aaa.com>\r\n",
                "RCPT TO:<aaa@aaa.com>\r\n", "DATA\r\n",
                "From:<bbb@aaa.com>\r\nTo:<aba@aaa.com>\r\nsubject:aa\r\nDate:123\r\nteast\r\n.\r\n\r\n.\r\n", "QUIT\r\n"])  # yes

@@ -26,15 +26,14 @@ COMPLETED_SUCCESSFULLY = "250 - Requested mail action completed and OK\r\n"
 START_DATA = "354 - Start mail input; end with .\r\n"
 
 
-
 def receive(client_socket, func):
     """
     :param func: the exit funcsion of the while loop.
     :param client_socket: the comm socket
     :return: the data thet was recived from the socket
     """
-    #FIXME: add return none if timeout (add timeout) cann end the prog with sys.exit()
-    #client_socket.settimeout(SOCKET_TIMEOUT)
+    # FIXME: add return none if timeout (add timeout) cann end the prog with sys.exit()
+    # client_socket.settimeout(SOCKET_TIMEOUT)
     data = ""
     while func(data):
         data += client_socket.recv(1)
@@ -116,10 +115,6 @@ def filter_massege(sender, dests, data):
     return is_valid and is_sender and is_date and is_subject
 
 
-
-
-
-
 def get_email(client_socket, data):
     """
     get all the email parameters from user
@@ -135,7 +130,7 @@ def get_email(client_socket, data):
     while not database.is_have(sender):
         client_socket.send(DESTINATION_INVALID)
         log.log("SEND:" + DESTINATION_INVALID, 1)
-        data = receive(client_socket, lambda data:"\r\n" not in data)
+        data = receive(client_socket, lambda data: "\r\n" not in data)
         if SENDER_HEADER not in data:
             return False
         sender = data[data.find("<") + 1:data.find(">")]
@@ -145,7 +140,7 @@ def get_email(client_socket, data):
     data = ""
     dests = []
     while not data[:4] == "DATA":
-        data = receive(client_socket, lambda data:"\r\n" not in data)
+        data = receive(client_socket, lambda data: "\r\n" not in data)
         if data[:len(DEST_HEADER)] == DEST_HEADER:
             ds = data[data.find("<")+1:data.find(">")]
             if database.is_have(ds):
@@ -155,13 +150,11 @@ def get_email(client_socket, data):
             else:
                 client_socket.send(DESTINATION_INVALID)
                 log.log("SEND:" + DESTINATION_INVALID, 1)
-
-
         elif data[:4] == "DATA" and len(dests) > 0:
             client_socket.send(START_DATA)
             log.log("SEND:" + START_DATA, 1)
         elif data == "QUIT\r\n":
-            return False                    #problem becose it wont QUIT
+            return False                    # problem becose it wont QUIT
         else:
             client_socket.send(BAD_REQUEST)
             log.log("SEND:" + BAD_REQUEST, 1)

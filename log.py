@@ -1,8 +1,7 @@
 """
 aotur: adi bleyer
-date: 
+date: 21323123
 """
-
 import logging
 import os
 import threading
@@ -194,7 +193,6 @@ class EmailData(object):
 
     def __str__(self):
         return str(self.recive_emails) + str(self.sent_emails)
-
 
 
 def main():

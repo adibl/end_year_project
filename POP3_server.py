@@ -3,15 +3,16 @@ from threading import Thread
 import socket
 
 
-
 IP = '0.0.0.0'
 PORT = 1500
 QUEUE_SIZE = 10
 LOGIN_MESSAGE = "+OK POP3 server ready\r\n"
 USER_EXIST = "+OK User accepted\r\n"
+SING_OFF = "+OK dewey POP3 server signing off\r\n"
 NO_SUCH_FILE = "-ERR no such message, only {0} messages in maildrop\r\n"
 NO_SUCH_USER = "-ERR no such email adress\r\n"
-SING_OFF = "+OK dewey POP3 server signing off\r\n"
+NO_SUCH_COMMAND = "-ERR no such command"
+
 
 def receive(client_socket, func):
     """
@@ -19,12 +20,13 @@ def receive(client_socket, func):
     :param client_socket: the comm socket
     :return: the data thet was recived from the socket
     """
-    #FIXME: add return none if timeout (add timeout) cann end the prog with sys.exit()
+    # FIXME: add return none if timeout (add timeout) cann end the prog with sys.exit()
     data = ""
     while func(data):
         data += client_socket.recv(1)
     log2.log("RECV:" + data, 1)
     return data
+
 
 def login(client_socket):
     client_socket.sendall(LOGIN_MESSAGE)
@@ -42,23 +44,22 @@ def login(client_socket):
         log2.log("SEND:" + USER_EXIST, 1)
         return user, "+OK"
     else:
-        return None, "unvalid request"
-
+        return None, NO_SUCH_COMMAND
 
 
 def HendelClient(client_socket, client_address):
     try:
         user, eror = login(client_socket)
         if eror != "+OK":
-            client_socket.sendall("-ERR" + eror)
-            log2.log("-ERR" + eror)
+            client_socket.sendall(eror)
+            log2.log(eror)
             return
         user_data = database.get_user_data(user)
         print user_data
         data = receive(client_socket, lambda m: "\r\n" not in m)
         if not data == "STAT\r\n":
-            client_socket.sendall("-ERR" + eror)
-            log2.log("-ERR" + eror)
+            client_socket.sendall(eror)
+            log2.log(eror)
             return
         responce = "+OK "
         responce += str(user_data.get_emails_num())
@@ -120,10 +121,6 @@ def HendelClient(client_socket, client_address):
         client_socket.sendall(SING_OFF)
         log2.log("SEND:"+SING_OFF, 1)
         client_socket.close()
-
-
-
-
 
 
 def main2(d, l):
