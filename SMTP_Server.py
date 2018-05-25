@@ -1,8 +1,7 @@
 """
-author; Nir Dweck
-Date: 1/3/18
-description: skeleton server which handles multiple clients by using select.
-ready
+author; Adi Bleyer
+Date: 52/5/18
+description: the SMTP server
 """
 import socket
 from threading import Thread
@@ -17,6 +16,7 @@ READ_SIZE = 1
 DOMINS = ".com"
 SENDER_HEADER = "MAIL FROM:"
 DEST_HEADER = "RCPT TO:"
+HELO_OPTIONS = ["HELO"]
 
 DESTINATION_INVALID = "515 - Destination mailbox address invalid\r\n"
 BAD_REQUEST = "500 - Bad Request\r\n"
@@ -33,8 +33,6 @@ def receive(client_socket, func):
     :param client_socket: the comm socket
     :return: the data thet was recived from the socket
     """
-    # FIXME: add return none if timeout (add timeout) cann end the prog with sys.exit()
-    # client_socket.settimeout(SOCKET_TIMEOUT)
     data = ""
     while func(data):
         data += client_socket.recv(1)
@@ -83,7 +81,7 @@ def handshake(client_socket):
     client_socket.send(READY)
     log.log("SEND:" + READY, 1)
     data = receive(client_socket, lambda data: "\r\n" not in data)
-    if data[:4] == "EHLO" or data[:4] == "HELO":
+    if data[:4] in HELO_OPTIONS:
         client_socket.send(COMPLETED_SUCCESSFULLY)
         log.log("SEND:" + COMPLETED_SUCCESSFULLY, 1)
     elif data[:4] == "QUIT":

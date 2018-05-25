@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
+"""
+author; Adi Bleyer
+Date: 52/5/18
+description: the POP3 server + anti spoothing
+"""
 from threading import Thread
 import socket
-
+#TODO: pep8
 
 IP = '0.0.0.0'
 PORT = 1500
@@ -21,7 +26,6 @@ def receive(client_socket, func=lambda data: "\r\n" not in data):
     :param client_socket: the comm socket
     :return: the data thet was recived from the socket
     """
-    # FIXME: add return none if timeout (add timeout) cann end the prog with sys.exit()
     data = ""
     while func(data):
         data += client_socket.recv(1)
@@ -30,6 +34,11 @@ def receive(client_socket, func=lambda data: "\r\n" not in data):
 
 
 def login(client_socket):
+    """
+    login with server
+    :param client_socket: the comm socket
+    :return the user email and if the login aproved or not
+    """
     client_socket.sendall(LOGIN_MESSAGE)
     log2.log("SEND:" + LOGIN_MESSAGE, 1)
     data = receive(client_socket, lambda m: "\r\n" not in m)
@@ -48,7 +57,12 @@ def login(client_socket):
         return None, NO_SUCH_COMMAND
 
 
-def HendelClient(client_socket, client_address):
+def hendel_client(client_socket, client_address):
+    """
+    hendel client main funcsion
+    :param client_socket: the comm socket
+    :return NONE
+    """
     try:
         user, eror = login(client_socket)
         if eror != "+OK":
@@ -82,7 +96,7 @@ def HendelClient(client_socket, client_address):
                 elif any(char.isdigit() for char in data):
                     index = filter(lambda char: char.isdigit(), data)
                     index = int(index)
-                    if user_data.IsExistRecive(index):
+                    if user_data.is_exzist_recive(index):
                         responce = "+OK "
                         responce += str(index)
                         responce += " massages ("
@@ -97,7 +111,7 @@ def HendelClient(client_socket, client_address):
             elif data[:4] == "RETR" and any(char.isdigit() for char in data):
                 index = filter(lambda char: char.isdigit(), data)
                 index = int(index)
-                if not user_data.IsExistRecive(index):
+                if not user_data.is_exzist_recive(index):
                     responce = NO_SUCH_FILE.format(user_data.get_emails_num())
                     client_socket.sendall(responce)
                     log2.log("SEND:" + responce, 1)
@@ -119,9 +133,6 @@ def HendelClient(client_socket, client_address):
                 sender_name = email.split('"')[1]
                 sender_email = email[email.find('<') + 1:email.find('>')]
                 user_data.add_sender_name(sender_email, sender_name, '+' in data)
-
-
-
             elif data == "":
                 break
             data = receive(client_socket, lambda m: "\r\n" not in m)
@@ -135,7 +146,9 @@ def HendelClient(client_socket, client_address):
 
 def main2(d, l):
     """
-    Add Documentation here
+    the main func of the server.
+    :param d: the database class
+    :param l: the log class
     """
     global database
     database = d
@@ -150,7 +163,7 @@ def main2(d, l):
         while True:
             client_socket, client_address = server_socket.accept()
             client_socket.settimeout(TIMEOUT)
-            thread = Thread(target=HendelClient, args=(client_socket, client_address))
+            thread = Thread(target=hendel_client, args=(client_socket, client_address))
             log2.log("new connection from " + str(client_address), 2)
             thread.start()
     except socket.error as err:

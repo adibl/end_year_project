@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+author; Adi Bleyer
+Date: 52/5/18
+description: email client (SMTP/POP3)
+"""
 from Tkinter import *
 import ScrolledText
 from ttk import *

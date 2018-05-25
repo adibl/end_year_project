@@ -1,13 +1,12 @@
 """
-aotur: adi bleyer
-date: 21323123
+author; Adi Bleyer
+Date: 52/5/18
+description: file with the database classes
 """
+#TODO:pep8
 import logging
 import os
 import threading
-import sys
-# remember to do assertsa
-# update documentation
 
 
 class LogFile(object):
@@ -18,9 +17,7 @@ class LogFile(object):
         fileHandler.setFormatter(formatter)
         streamHandler = logging.StreamHandler()
         streamHandler.setFormatter(formatter)
-
         self.logger.setLevel(logging.DEBUG)
-
         self.logger.addHandler(fileHandler)
         self.logger.addHandler(streamHandler)
         self.lock = threading.Lock()
@@ -179,7 +176,7 @@ class EmailData(object):
         """
         return self.recive_emails
 
-    def IsExistRecive(self, index):
+    def is_exzist_recive(self, index):
         """
         :param: index: the mail index in the mailbox
         return if there is such email index on the mailbox
@@ -194,6 +191,12 @@ class EmailData(object):
         return self.recive_emails[-index][1]
 
     def is_valid_email(self, sender_email, sender_name):
+        """
+        check if the email name combination is valid
+        :param sender_name: the name
+        :param sender_email: the email
+        :return if the combination is valid (unknown, valid or invalid)
+        """
         if sender_email in self.vaild_names and sender_name in self.vaild_names[sender_email][0]:
             return '+valid '
         if sender_email in self.vaild_names and sender_name in self.vaild_names[sender_email][1]:
@@ -201,6 +204,13 @@ class EmailData(object):
         return '?unknown '
 
     def add_sender_name(self, sender_email, sender_name, is_valid):
+        """
+        add a sender email to sertain name
+        :param sender_email: the email to add
+        :param sender_name: the name to add
+        :param is_valid: True if the name and email combination is valid and False otherwise
+        :return None
+        """
         if is_valid:
             place = 0
         else:
@@ -208,7 +218,6 @@ class EmailData(object):
         if sender_email not in self.vaild_names:
             self.vaild_names[sender_email] = [[], []]
         self.vaild_names[sender_email][place].append(sender_name)
-        print self.vaild_names
 
 
     def __str__(self):
