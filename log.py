@@ -133,6 +133,7 @@ class EmailData(object):
         self.data_file = data_file
         self.recive_emails = []  # arry of tuples (email place,email lengh)
         self.sent_emails = []
+        self.vaild_names = {}
 
     def add_recive_email(self, place, length):
         """
@@ -191,6 +192,24 @@ class EmailData(object):
         :return the email length
         """
         return self.recive_emails[-index][1]
+
+    def is_valid_email(self, sender_email, sender_name):
+        if sender_email in self.vaild_names and sender_name in self.vaild_names[sender_email][0]:
+            return '+valid '
+        if sender_email in self.vaild_names and sender_name in self.vaild_names[sender_email][1]:
+            return '-unvalid '
+        return '?unknown '
+
+    def add_sender_name(self, sender_email, sender_name, is_valid):
+        if is_valid:
+            place = 0
+        else:
+            place = 1
+        if sender_email not in self.vaild_names:
+            self.vaild_names[sender_email] = [[], []]
+        self.vaild_names[sender_email][place].append(sender_name)
+        print self.vaild_names
+
 
     def __str__(self):
         return str(self.recive_emails) + str(self.sent_emails)

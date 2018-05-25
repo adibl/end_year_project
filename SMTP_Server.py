@@ -24,6 +24,7 @@ END_COMM = "221 - Domain service closing transmission channel\r\n"
 READY = "220 - Domain service ready\r\n"
 COMPLETED_SUCCESSFULLY = "250 - Requested mail action completed and OK\r\n"
 START_DATA = "354 - Start mail input; end with .\r\n"
+TIMEOUT = 15
 
 
 def receive(client_socket, func):
@@ -64,10 +65,12 @@ def hendel_client(client_socket, aa):
                     client_socket.close()
                     return
             elif data2 == "QUIT\r\n":
+                client_socket.sendall(END_COMM)
+                log.log("SEND" + END_COMM, 1)
                 client_socket.close()
                 return
     except socket.error as err:
-        log.log("socket eror", 1)
+        log.log("socket eror" + str(err), 3)
         client_socket.close()
 
 
@@ -189,6 +192,7 @@ def main_loop(d, l):
         log.log("Listening for connections on port %d" % PORT, 2)
         while True:
             client_socket, client_address = server_socket.accept()
+            client_socket.settimeout(TIMEOUT)
             thread = Thread(target=hendel_client, args=(client_socket, client_address))
             log.log("new connection from " + str(client_address), 2)
             thread.start()

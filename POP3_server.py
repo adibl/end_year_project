@@ -12,9 +12,10 @@ SING_OFF = "+OK dewey POP3 server signing off\r\n"
 NO_SUCH_FILE = "-ERR no such message, only {0} messages in maildrop\r\n"
 NO_SUCH_USER = "-ERR no such email adress\r\n"
 NO_SUCH_COMMAND = "-ERR no such command"
+TIMEOUT = 60*10
 
 
-def receive(client_socket, func):
+def receive(client_socket, func=lambda data: "\r\n" not in data):
     """
     :param func: the exit funcsion of the while loop.
     :param client_socket: the comm socket
@@ -55,7 +56,6 @@ def HendelClient(client_socket, client_address):
             log2.log(eror)
             return
         user_data = database.get_user_data(user)
-        print user_data
         data = receive(client_socket, lambda m: "\r\n" not in m)
         if not data == "STAT\r\n":
             client_socket.sendall(eror)
@@ -80,7 +80,6 @@ def HendelClient(client_socket, client_address):
                     client_socket.sendall(responce)
                     log2.log("SEND:" + responce, 1)
                 elif any(char.isdigit() for char in data):
-                    print 'LIST x'
                     index = filter(lambda char: char.isdigit(), data)
                     index = int(index)
                     if user_data.IsExistRecive(index):
@@ -98,28 +97,39 @@ def HendelClient(client_socket, client_address):
             elif data[:4] == "RETR" and any(char.isdigit() for char in data):
                 index = filter(lambda char: char.isdigit(), data)
                 index = int(index)
-                print index
                 if not user_data.IsExistRecive(index):
                     responce = NO_SUCH_FILE.format(user_data.get_emails_num())
                     client_socket.sendall(responce)
                     log2.log("SEND:" + responce, 1)
                 else:
+                    email = user_data.get_email(index)
                     responce = "+OK "
+                    sender_name = email.split('"')[1]
+                    sender_email = email[email.find('<') + 1:email.find('>')]
+                    is_valid_sender = user_data.is_valid_email(sender_email, sender_name)
+                    responce += is_valid_sender
                     responce += str(user_data.get_email_length(index))
                     responce += " octets\r\n"
                     client_socket.sendall(responce)
                     log2.log("SEND:" + responce, 1)
-                    email = user_data.get_email(index)
-                    print email
                     client_socket.sendall(email)
                     log2.log("SEND:" + email, 1)
+            elif 'AAAA' == data[:4]:
+                print data
+                sender_name = email.split('"')[1]
+                sender_email = email[email.find('<') + 1:email.find('>')]
+                user_data.add_sender_name(sender_email, sender_name, '+' in data)
+
+
 
             elif data == "":
-                pass
+                break
             data = receive(client_socket, lambda m: "\r\n" not in m)
-    finally:
         client_socket.sendall(SING_OFF)
         log2.log("SEND:"+SING_OFF, 1)
+    except socket.error as err:
+        log2.log('received client socket exception - ' + str(err), 3)
+    finally:
         client_socket.close()
 
 
@@ -139,6 +149,7 @@ def main2(d, l):
 
         while True:
             client_socket, client_address = server_socket.accept()
+            client_socket.settimeout(TIMEOUT)
             thread = Thread(target=HendelClient, args=(client_socket, client_address))
             log2.log("new connection from " + str(client_address), 2)
             thread.start()

@@ -78,7 +78,7 @@ def verify(email, client_socket):
     return data[:3] == "+OK"
 
 
-def show_email(email, f, window):
+def show_email(email, f, window, client_socket, is_valid):
     print email
     f.pack_forget()
     f2 = Frame(window)
@@ -87,8 +87,19 @@ def show_email(email, f, window):
     l1.pack()
     l2 = Button(f2, text='return', command=f2.quit)
     l2.pack()
-    f2.mainloop()
-    f2.pack_forget()
+    if is_valid:
+        f2.mainloop()
+    else:
+        sender_name = email.split('"')[1]
+        sender_email = email[email.find('<') + 1:email.find('>')]
+        ansear = tkMessageBox.askokcancel("Question","This email is from " + sender_email + " named " + sender_name + 'are you sure thet this is his email?')
+        if ansear:
+            client_socket.sendall("AAAA+" + '"' +sender_name + '" <' + sender_email + ">" +"\r\n")
+        else:
+            client_socket.sendall("AAAA-" + '"' +sender_name + '" <' + sender_email + ">" +"\r\n")
+        if ansear:
+            f2.mainloop()
+    f2.destroy()
     f.pack()
 
 
@@ -96,24 +107,39 @@ def update_GUI(emails, client_socket, window, f):
     f.pack_forget()
     f2 = Frame(window)
     f2.pack()
-    for email in emails:
+    for text_email in emails[0]:
         text = ''
-        for line in email.splitlines():
+        for line in text_email.splitlines():
             if 'subject' in line:
                 text += line + '\r\n'
-        for line in email.splitlines():
+        for line in text_email.splitlines():
             if 'from' in line:
                 text += line + '\r\n'
-        l1 = Button(f2, text=text, command=lambda: show_email(email, f2, window))
+        l1 = Button(f2, text=text, command=lambda email2=text_email: show_email(email2, f2, window, client_socket, True))
         l1.pack()
+
+    for text_email in emails[1]:
+        text = ''
+        for line in text_email.splitlines():
+            if 'subject' in line:
+                text += line + '\r\n'
+        for line in text_email.splitlines():
+            if 'from' in line:
+                text += line + '\r\n'
+        l1 = Button(f2, text=text, command=lambda email2=text_email: show_email(email2, f2, window, client_socket, False))
+        l1.pack()
+
     l2 = Button(f2, text="send email", command=lambda: SMTP())
     l2.pack()
-    l3 = Button(f2, text="refrese", command=lambda: update_GUI(get_emails(client_socket, emails), client_socket, window, f2))
+    l3 = Button(f2, text="refrese", command=lambda: update_GUI(get_emails(client_socket), client_socket, window, f2) and f2.quit())
     l3.pack()
-    l4 = Button(f2, text='exit', command=window.quit)
+    l4 = Button(f2, text='exit', command=f2.quit)
     l4.pack()
     f2.pack()
-    window.mainloop()
+    f2.mainloop()
+    f2.destroy()
+    f.pack()
+    f.quit()
 
 
 def inbox_GUI(emails, client_socket):
@@ -123,7 +149,7 @@ def inbox_GUI(emails, client_socket):
     window.minsize(1500, 1500)
     f = Frame(window)
     f.pack()
-    for text_email in emails:
+    for text_email in emails[0]:
         text = ''
         for line in text_email.splitlines():
             if 'subject' in line:
@@ -131,21 +157,33 @@ def inbox_GUI(emails, client_socket):
         for line in text_email.splitlines():
             if 'from' in line:
                 text += line + '\r\n'
-        l1 = Button(f, text=text, command=lambda email2=text_email: show_email(email2, f, window))
+        l1 = Button(f, text=text, command=lambda email2=text_email: show_email(email2, f, window, client_socket, True))
         l1.pack()
+
+    for text_email in emails[1]:
+        text = ''
+        for line in text_email.splitlines():
+            if 'subject' in line:
+                text += line + '\r\n'
+        for line in text_email.splitlines():
+            if 'from' in line:
+                text += line + '\r\n'
+        l1 = Button(f, text=text, command=lambda email2=text_email: show_email(email2, f, window, client_socket, False))
+        l1.pack()
+
     l2 = Button(f, text="send email", command=lambda: SMTP())
     l2.pack()
-    l3 = Button(f, text="refrese", command=lambda: update_GUI(get_emails(client_socket, emails), client_socket, window, f) and window.quit)
+    l3 = Button(f, text="refrese", command=lambda: update_GUI(get_emails(client_socket), client_socket, window, f) and f.quit())
     l3.pack()
-    l4 = Button(f, text='exit', command=window.quit)
+    l4 = Button(f, text='exit', command=f.quit)
     l4.pack()
-    window.mainloop()
+    f.mainloop()
     window.destroy()
 
 
-def get_emails(client_socket, *emails2):
-    emails = emails2
+def get_emails(client_socket):
     emails = []
+    unknown_emails = []
     for num in xrange(1, 10, 1):
         client_socket.sendall("RETR" + str(num) + "\r\n")
         log.log("RETR" + str(num) + "\r\n", 1)
@@ -155,10 +193,14 @@ def get_emails(client_socket, *emails2):
         else:
             length = filter(lambda char: char.isdigit(), data)
             print length
-            data = receive(client_socket, lambda d: "\r\n." not in d and "\n\n." not in d)
-            print data
-            emails.append(data)
-    return emails
+            email = receive(client_socket, lambda d: "\r\n." not in d and "\n\n." not in d)
+            print email
+
+            if "?" in data:
+                unknown_emails.append(email)
+            elif "-" not in data:
+                emails.append(email)
+    return [emails, unknown_emails]
 
 
 def POP3():
