@@ -235,6 +235,8 @@ def POP3():
         print 'error in communication with server - ' + str(msg)
     finally:
         time.sleep(1)
+        client_socket.sendall("QUIT\r\n")
+        log.log("QUIT\r\n", 1)
         client_socket.close()
 
 
