@@ -20,6 +20,8 @@ POP3_PORT = 1500
 START_EMAIL = "<"
 END_EMAIL = ">"
 SENDER_NAME = '"'
+
+
 def login(client_socket):
     print "log_in"
     window = Tk()
@@ -98,11 +100,11 @@ def show_email(email, f, window, client_socket, is_valid):
     else:
         sender_name = email.split('"')[1]
         sender_email = email[email.find('<') + 1:email.find('>')]
-        ansear = tkMessageBox.askokcancel("Question","This email is from " + sender_email + " named " + sender_name + 'are you sure thet this is his email?')
+        ansear = tkMessageBox.askokcancel("Question", "This email is from " + sender_email + " named " + sender_name + 'are you sure thet this is his email?')
         if ansear:
-            client_socket.sendall("AAAA+" + SENDER_NAME +sender_name + SENDER_NAME + " " + START_EMAIL + sender_email + END_EMAIL +"\r\n")
+            client_socket.sendall("AAAA+" + SENDER_NAME + sender_name + SENDER_NAME + " " + START_EMAIL + sender_email + END_EMAIL + "\r\n")
         else:
-            client_socket.sendall("AAAA-" + SENDER_NAME +sender_name + SENDER_NAME + " " + START_EMAIL + sender_email + END_EMAIL +"\r\n")
+            client_socket.sendall("AAAA-" + SENDER_NAME + sender_name + SENDER_NAME + " " + START_EMAIL + sender_email + END_EMAIL + "\r\n")
         if ansear:
             f2.mainloop()
     f2.destroy()
@@ -349,7 +351,7 @@ def send_email(client_socket):
         unvalid_dests = valid_destinasions(client_socket, dests)
     email = ""
     for dest in dests:
-            email += "To:" + START_EMAIL + dest + ">\r\n"
+        email += "To:" + START_EMAIL + dest + ">\r\n"
     email += "Date:" + str(datetime.datetime.now()) + "\r\n"
     subject = subject_box.get()
     if subject == "":

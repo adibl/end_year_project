@@ -3,7 +3,7 @@ author; Adi Bleyer
 Date: 52/5/18
 description: file with the database classes
 """
-#TODO:pep8
+# TODO:pep8
 import logging
 import os
 import threading
@@ -11,15 +11,19 @@ import threading
 
 class LogFile(object):
     def __init__(self, file_name, forma):
+        """
+        :param file_name: the name of the log file (don't have to exist)
+        :param forma: the log format.
+        """
         self.logger = logging.getLogger(file_name[:-3])
         formatter = logging.Formatter(forma)
-        fileHandler = logging.FileHandler(file_name, mode='w')
-        fileHandler.setFormatter(formatter)
-        streamHandler = logging.StreamHandler()
-        streamHandler.setFormatter(formatter)
+        file_handler = logging.FileHandler(file_name, mode='w')
+        file_handler.setFormatter(formatter)
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
         self.logger.setLevel(logging.DEBUG)
-        self.logger.addHandler(fileHandler)
-        self.logger.addHandler(streamHandler)
+        self.logger.addHandler(file_handler)
+        self.logger.addHandler(stream_handler)
         self.lock = threading.Lock()
 
     def log(self, message, level):
@@ -44,6 +48,9 @@ class LogFile(object):
 
 class DataFile(object):
     def __init__(self, file_name):
+        """
+        :param file_name: the name of the log file (don't have to exist)
+        """
         if not os.path.isfile(file_name):
             handel = open(file_name, 'w')
             handel.close()
@@ -73,11 +80,17 @@ class DataFile(object):
         return data
 
     def get_file_len(self):
+        """
+        :return the total length of all the massages in the mailbox
+        """
         return self.length
 
 
 class Database(object):
     def __init__(self, file_name):
+        """
+        :param file_name: the name of the data file (don't have to exist)
+        """
         self.data_file = DataFile(file_name)
         self.adreses = {'bob@gmail.com': EmailData(self.data_file), "alice@gmail.com": EmailData(self.data_file), "alice,@gmail.com": EmailData(self.data_file)}
         self.lock = threading.Lock()
@@ -119,14 +132,23 @@ class Database(object):
             self.adreses[email[0]].add_sent_email(place, len(email[2]))
 
     def is_have(self, email):
-        return self.adreses.has_key(email)
+        """
+        :return true if the email isa in the database and false otherwise
+        """
+        return email in self.adreses
 
     def get_user_data(self, email):
+        """
+        :return the user data class for certain email
+        """
         return self.adreses[email]
 
 
 class EmailData(object):
     def __init__(self, data_file):
+        """
+        :param data_file: the file name for the database (don't have to exist)
+        """
         self.data_file = data_file
         self.recive_emails = []  # arry of tuples (email place,email lengh)
         self.sent_emails = []
@@ -219,16 +241,21 @@ class EmailData(object):
             self.vaild_names[sender_email] = [[], []]
         self.vaild_names[sender_email][place].append(sender_name)
 
-
     def __str__(self):
         return str(self.recive_emails) + str(self.sent_emails)
 
 
 def defult_start(database):
-    pass
-    database.add_email(['alice@gmail.com', ['bob@gmail.com', 'alice@gmail.com'], 'from: "alice" <alice@gmail.com>\r\nto:<bob@gmail.com>\r\nto:<bob@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nhelow\r\n.'])
-    database.add_email(['alice,@gmail.com', ['bob@gmail.com', 'alice,@gmail.com'], 'from: "alice" <alice,@gmail.com>\r\nto:<bob@gmail.com>\r\nto:<alice,@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nfake email\r\n.'])
+    email = 'from: "alice" <alice@gmail.com>\r\nto:<bob@gmail.com>\r\nto:<bob@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nhelow\r\n.'
+    database.add_email(['alice@gmail.com', ['bob@gmail.com', 'alice@gmail.com'], email])
+    email = 'from: "alice" <alice,@gmail.com>\r\nto:<bob@gmail.com>\r\nto:<alice,@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nfake email\r\n.'
+    database.add_email(['alice,@gmail.com', ['bob@gmail.com', 'alice,@gmail.com'], email])
+
+
 def main():
+    """
+    none
+    """
     pass
 
 if __name__ == '__main__':

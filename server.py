@@ -4,10 +4,10 @@ author; Adi Bleyer
 Date: 52/5/18
 description: mai server, the lanch file of the servers
 """
+from threading import Thread
 from log import LogFile
 from log import Database
 from log import defult_start
-from threading import Thread
 from SMTP_Server import main_loop
 from POP3_server import main2
 

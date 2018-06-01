@@ -6,7 +6,7 @@ description: the POP3 server + anti spoothing
 """
 from threading import Thread
 import socket
-#TODO: pep8
+# TODO: pep8
 
 IP = '0.0.0.0'
 PORT = 1500
