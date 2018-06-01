@@ -16,7 +16,10 @@ USER_EXIST = "+OK User accepted\r\n"
 SING_OFF = "+OK dewey POP3 server signing off\r\n"
 NO_SUCH_FILE = "-ERR no such message, only {0} messages in maildrop\r\n"
 NO_SUCH_USER = "-ERR no such email adress\r\n"
-NO_SUCH_COMMAND = "-ERR no such command"
+NO_SUCH_COMMAND = "-ERR no such command\r\n"
+START_EMAIL = "<"
+END_EMAIL = ">"
+SENDER_NAME = '"'
 TIMEOUT = 60*10
 
 
@@ -41,13 +44,13 @@ def login(client_socket):
     """
     client_socket.sendall(LOGIN_MESSAGE)
     log2.log("SEND:" + LOGIN_MESSAGE, 1)
-    data = receive(client_socket, lambda m: "\r\n" not in m)
+    data = receive(client_socket)
     if data[:4] == "USER":
         user = data[data.find(" ") + 1:data.find("\r\n")]
         while not database.is_have(user):
             client_socket.sendall(NO_SUCH_USER)
             log2.log("SEND:" + NO_SUCH_USER, 1)
-            data = receive(client_socket, lambda m: "\r\n" not in m)
+            data = receive(client_socket)
             user = data[data.find(" ") + 1:data.find("\r\n")]
 
         client_socket.sendall(USER_EXIST)
@@ -70,7 +73,7 @@ def hendel_client(client_socket, client_address):
             log2.log(eror)
             return
         user_data = database.get_user_data(user)
-        data = receive(client_socket, lambda m: "\r\n" not in m)
+        data = receive(client_socket)
         if not data == "STAT\r\n":
             client_socket.sendall(eror)
             log2.log(eror)
@@ -82,7 +85,7 @@ def hendel_client(client_socket, client_address):
         responce += ")\r\n"
         client_socket.sendall(responce)
         log2.log("SEND:" + responce, 1)
-        data = receive(client_socket, lambda m: "\r\n" not in m)
+        data = receive(client_socket)
         while data != "QUIT\r\n":
             if data[:4] == "LIST":
                 if data == "LIST\r\n":
@@ -118,8 +121,8 @@ def hendel_client(client_socket, client_address):
                 else:
                     email = user_data.get_email(index)
                     responce = "+OK "
-                    sender_name = email.split('"')[1]
-                    sender_email = email[email.find('<') + 1:email.find('>')]
+                    sender_name = email.split(SENDER_NAME)[1]
+                    sender_email = email[email.find(START_EMAIL) + 1:email.find(END_EMAIL)]
                     is_valid_sender = user_data.is_valid_email(sender_email, sender_name)
                     responce += is_valid_sender
                     responce += str(user_data.get_email_length(index))
@@ -129,15 +132,12 @@ def hendel_client(client_socket, client_address):
                     client_socket.sendall(email)
                     log2.log("SEND:" + email, 1)
             elif 'AAAA' == data[:4]:
-                print data
-                sender_name = data.split('"')[1]
-                sender_email = data[data.find('<') + 1:data.find('>')]
-                print sender_email
-                print data[data.find('<'):data.find('>')]
+                sender_name = data.split(SENDER_NAME)[1]
+                sender_email = data[data.find(START_EMAIL) + 1:data.find(END_EMAIL)]
                 user_data.add_sender_name(sender_email, sender_name, '+' in data)
             elif data == "":
                 break
-            data = receive(client_socket, lambda m: "\r\n" not in m)
+            data = receive(client_socket)
         client_socket.sendall(SING_OFF)
         log2.log("SEND:"+SING_OFF, 1)
     except socket.error as err:

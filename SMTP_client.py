@@ -17,8 +17,9 @@ ENDINGS = ['.com', '.co.il']
 SERVER_IP = "127.0.0.1"
 SERVER_PORT = 20011
 POP3_PORT = 1500
-
-
+START_EMAIL = "<"
+END_EMAIL = ">"
+SENDER_NAME = '"'
 def login(client_socket):
     print "log_in"
     window = Tk()
@@ -99,9 +100,9 @@ def show_email(email, f, window, client_socket, is_valid):
         sender_email = email[email.find('<') + 1:email.find('>')]
         ansear = tkMessageBox.askokcancel("Question","This email is from " + sender_email + " named " + sender_name + 'are you sure thet this is his email?')
         if ansear:
-            client_socket.sendall("AAAA+" + '"' +sender_name + '" <' + sender_email + ">" +"\r\n")
+            client_socket.sendall("AAAA+" + SENDER_NAME +sender_name + SENDER_NAME + " " + START_EMAIL + sender_email + END_EMAIL +"\r\n")
         else:
-            client_socket.sendall("AAAA-" + '"' +sender_name + '" <' + sender_email + ">" +"\r\n")
+            client_socket.sendall("AAAA-" + SENDER_NAME +sender_name + SENDER_NAME + " " + START_EMAIL + sender_email + END_EMAIL +"\r\n")
         if ansear:
             f2.mainloop()
     f2.destroy()
@@ -192,19 +193,19 @@ def get_emails(client_socket):
     for num in xrange(1, 10, 1):
         client_socket.sendall("RETR" + str(num) + "\r\n")
         log.log("RETR" + str(num) + "\r\n", 1)
-        data = receive(client_socket, lambda d: "\r\n" not in d)
+        data = receive(client_socket)
         if data[:3] != "+OK":
             break
         else:
             length = filter(lambda char: char.isdigit(), data)
             print length
-            email = receive(client_socket, lambda d: "\r\n." not in d and "\n\n." not in d)
-            print email
+            email = receive(client_socket, lambda d: "\r\n." not in d)
 
             if "?" in data:
                 unknown_emails.append(email)
             elif "-" not in data:
                 emails.append(email)
+    print [emails, unknown_emails]
     return [emails, unknown_emails]
 
 
@@ -214,7 +215,7 @@ def POP3():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client_socket.connect((SERVER_IP, POP3_PORT))
-        data = receive(client_socket, lambda d: "\r\n" not in d)
+        data = receive(client_socket)
         if not data[:3] == "+OK":
             tkMessageBox.showerror("Error", "server didn't connect")
             return
@@ -290,8 +291,8 @@ def vaild_sender(client_socket, sender):
     :param sender: the email adress of the user
     :return: true if the email is good and the eror string otherwise
     """
-    client_socket.sendall("MAIL FROM:" + "<" + sender + ">" + "\r\n")
-    data = receive(client_socket, lambda d: "\r\n" not in d)
+    client_socket.sendall("MAIL FROM:" + START_EMAIL + sender + END_EMAIL + "\r\n")
+    data = receive(client_socket)
     if not data[:3] == "250":
         return data
     return True
@@ -304,11 +305,11 @@ def handshake(client_socket, sender):
     :param sender: the email of the sender
     :return: true if the process ended and the eror string otherwise
     """
-    data = receive(client_socket, lambda d: "\r\n" not in d)
+    data = receive(client_socket)
     if not data[:3] == "220":
         return data
     client_socket.sendall("HELO " + sender[sender.find("@") + 1:] + "\r\n")
-    data = receive(client_socket, lambda d: "\r\n" not in d)
+    data = receive(client_socket)
     if not data[:3] == "250":
         return data
     return True
@@ -323,8 +324,8 @@ def valid_destinasions(client_socket, destination):
     """
     unvalid_emails = []
     for dest in destination:
-        client_socket.sendall("RCPT TO:" + "<" + dest + ">" + "\r\n")
-        data = receive(client_socket, lambda d: "\r\n" not in d)
+        client_socket.sendall("RCPT TO:" + START_EMAIL + dest + END_EMAIL + "\r\n")
+        data = receive(client_socket)
         if not data[:3] == "250":
             unvalid_emails.append(dest)
     if len(unvalid_emails) == 0:
@@ -348,7 +349,7 @@ def send_email(client_socket):
         unvalid_dests = valid_destinasions(client_socket, dests)
     email = ""
     for dest in dests:
-            email += "To:" + "<" + dest + ">\r\n"
+            email += "To:" + START_EMAIL + dest + ">\r\n"
     email += "Date:" + str(datetime.datetime.now()) + "\r\n"
     subject = subject_box.get()
     if subject == "":
@@ -373,24 +374,11 @@ def send_email2(masseges):
         for m in masseges:
             time.sleep(0.2)
             client_socket.sendall(m)
-            print m
     except socket.error as msg:
         print 'error in communication with server - ' + str(msg)
     finally:
         time.sleep(1)
         client_socket.close()
-
-
-def thread_client():
-    """
-    prrove thet the server treading works
-    """
-    global log
-    log = LogFile("client.log", '%(levelname)s:%(message)s')
-    from threading import Thread
-    for send in range(1, 10, 1):
-        thread = Thread(target=send_email, args=("aaa@aaa.com", 'adib', "bbb@aaa.com", "text", "my first client" + str(send)))
-        thread.start()
 
 
 def SMTP():
@@ -407,16 +395,16 @@ def SMTP():
         if not vaild_sender(client_socket, user_email):
             print "unvalid email adress"
             tkMessageBox.showerror("Error", "your email is unvalid")
-        email = "From:" + ' "' + user_name + '" ' + "<" + user_email + ">" + "\r\n"
+        email = "From:" + ' "' + user_name + '" ' + START_EMAIL + user_email + END_EMAIL + "\r\n"
         email += send_email(client_socket)
 
         client_socket.sendall("DATA\r\n")
-        data = receive(client_socket, lambda d: "\r\n" not in d)
+        data = receive(client_socket)
         if not data[:3] == "354":
             print 'server error'
             tkMessageBox.showerror("Error", "client problem")
         client_socket.sendall(email)
-        data = receive(client_socket, lambda d: "\r\n" not in d)
+        data = receive(client_socket)
         if not data[:3] == "250":
             print 'unvalid email'
             tkMessageBox.showerror("Error", "email can't send")
@@ -433,15 +421,7 @@ def main():
     """
     this is a ceack func
     """
-    send_email2(["HELO relay.example.com\r\n", "MAIL FROM:<aaa@aaa.com>\r\n", "RCPT TO:<ccc@aaa.com>\r\n", "RCPT TO:<bbb@aaa.com>\r\n", "DATA\r\n", "From:<aaa@aaa.com>\r\nTo:<bbb@aaa.com>\r\nsubject:aa\r\nDate:123\r\nteast\r\n.\r\n", "QUIT\r\n"])  # yes- valid email sent
-    send_email2(["HELO relay.example.com", "MAIL FROM:<ccc@aaa.com>\r\n", "MAIL FROM:<bbb@aaa.com>\r\n", "RCPT TO:<aaa@aaa.com>\r\n", "DATA\r\n", "From:<bbb@aaa.com>\r\nTo:<aaa@aaa.com>\r\nsubject:aa\r\nDate:123\r\neast\r\n.\r\n\r\n.\r\n", "QUIT\r\n"]) # yes -valid email sent
-    send_email2(["HELO relay.example.com", "MAIL FROM:<bbb@aaa.com>\r\n", "RCPT TO:<aaa@aaa.com>\r\n", "QUIT\r\n"]) # yes unvalid
-    send_email2(["HELO relay.example.\r\n", "QUIT\r\n"]) # yes
-    send_email2(["QUIT\r\n"]) # yes
-    send_email2(["GET HTTP1.1\r\n"]) # yes
-    send_email2(["HELO relay.example.com", "MAIL FROM:<ccc@aaa.com>\r\n", "MAIL FROM:<bbb@aaa.com>\r\n",
-               "RCPT TO:<aaa@aaa.com>\r\n", "DATA\r\n",
-               "From:<bbb@aaa.com>\r\nTo:<aba@aaa.com>\r\nsubject:aa\r\nDate:123\r\nteast\r\n.\r\n\r\n.\r\n", "QUIT\r\n"])  # yes
+    pass
 
 
 if __name__ == '__main__':

@@ -25,9 +25,11 @@ READY = "220 - Domain service ready\r\n"
 COMPLETED_SUCCESSFULLY = "250 - Requested mail action completed and OK\r\n"
 START_DATA = "354 - Start mail input; end with .\r\n"
 TIMEOUT = 15
+START_SEND = "DATA"
+END_COMM = "QUIT"
 
 
-def receive(client_socket, func):
+def receive(client_socket, func=lambda data: "\r\n" not in data):
     """
     :param func: the exit funcsion of the while loop.
     :param client_socket: the comm socket
@@ -52,7 +54,7 @@ def hendel_client(client_socket, aa):
             client_socket.close()
             return
         while True:
-            data2 = receive(client_socket, lambda x: "\r\n" not in x)
+            data2 = receive(client_socket)
             log.log("RECV:" + data2, 1)
             if ":" in data2:
                 email = get_email(client_socket, data2)
@@ -62,7 +64,7 @@ def hendel_client(client_socket, aa):
                 else:
                     client_socket.close()
                     return
-            elif data2 == "QUIT\r\n":
+            elif data2[:4] == END_COMM:
                 client_socket.sendall(END_COMM)
                 log.log("SEND" + END_COMM, 1)
                 client_socket.close()
@@ -80,11 +82,11 @@ def handshake(client_socket):
     """
     client_socket.send(READY)
     log.log("SEND:" + READY, 1)
-    data = receive(client_socket, lambda data: "\r\n" not in data)
+    data = receive(client_socket)
     if data[:4] in HELO_OPTIONS:
         client_socket.send(COMPLETED_SUCCESSFULLY)
         log.log("SEND:" + COMPLETED_SUCCESSFULLY, 1)
-    elif data[:4] == "QUIT":
+    elif data[:4] == END_COMM:
         client_socket.send(END_COMM)
         log.log("SEND:" + END_COMM, 1)
         return False
@@ -131,7 +133,7 @@ def get_email(client_socket, data):
     while not database.is_have(sender):
         client_socket.send(DESTINATION_INVALID)
         log.log("SEND:" + DESTINATION_INVALID, 1)
-        data = receive(client_socket, lambda data: "\r\n" not in data)
+        data = receive(client_socket)
         if SENDER_HEADER not in data:
             return False
         sender = data[data.find("<") + 1:data.find(">")]
@@ -140,8 +142,8 @@ def get_email(client_socket, data):
 
     data = ""
     dests = []
-    while not data[:4] == "DATA":
-        data = receive(client_socket, lambda data: "\r\n" not in data)
+    while not data[:4] == START_SEND:
+        data = receive(client_socket)
         if data[:len(DEST_HEADER)] == DEST_HEADER:
             ds = data[data.find("<")+1:data.find(">")]
             if database.is_have(ds):
@@ -151,10 +153,10 @@ def get_email(client_socket, data):
             else:
                 client_socket.send(DESTINATION_INVALID)
                 log.log("SEND:" + DESTINATION_INVALID, 1)
-        elif data[:4] == "DATA" and len(dests) > 0:
+        elif data[:4] == START_SEND and len(dests) > 0:
             client_socket.send(START_DATA)
             log.log("SEND:" + START_DATA, 1)
-        elif data == "QUIT\r\n":
+        elif data[:4] == END_COMM:
             return False                    # problem becose it wont QUIT
         else:
             client_socket.send(BAD_REQUEST)
@@ -207,4 +209,4 @@ def main():
 
 
 if __name__ == '__main__':
-    print 5
+    pass

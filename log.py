@@ -60,14 +60,14 @@ class DataFile(object):
         with self.lock:
             with open(self.file_name, 'ab') as handel:
                 handel.write(data)
-                self.length += len(data.encode('utf-8'))
+                self.length += len(data)
 
     def read_position(self, place, length):
         """
         :param place: the position to start reading
         :param length: the lengh of the messege to read
         """
-        with open(self.file_name, 'r') as handel:
+        with open(self.file_name, 'rb') as handel:
             handel.seek(place)
             data = handel.read(length)
         return data
@@ -79,7 +79,7 @@ class DataFile(object):
 class Database(object):
     def __init__(self, file_name):
         self.data_file = DataFile(file_name)
-        self.adreses = {'bbb@gmail.com': EmailData(self.data_file), "aaa@gmail.com": EmailData(self.data_file), "aaaa@gmail.com": EmailData(self.data_file)}
+        self.adreses = {'bob@gmail.com': EmailData(self.data_file), "alice@gmail.com": EmailData(self.data_file), "alice,@gmail.com": EmailData(self.data_file)}
         self.lock = threading.Lock()
 
     def add_email(self, email):
@@ -115,8 +115,8 @@ class Database(object):
         print "aa" + str(email)
         with self.lock:
             for dest in email[1]:
-                self.adreses[dest].add_recive_email(place, len(email[2].encode('utf-8')))
-            self.adreses[email[0]].add_sent_email(place, len(email[2].encode('utf-8')))
+                self.adreses[dest].add_recive_email(place, len(email[2]))
+            self.adreses[email[0]].add_sent_email(place, len(email[2]))
 
     def is_have(self, email):
         return self.adreses.has_key(email)
@@ -226,8 +226,8 @@ class EmailData(object):
 
 def defult_start(database):
     pass
-    database.add_email(['aaa@gmail.com', ['aaa@gmail.com', 'bbb@gmail.com'], 'from: "adib" <aaa@gmail.com>\r\nto:<aaa@gmail.com>\r\nto:<bbb@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nhelow\n\r\n.'])
-    database.add_email(['aaaa@gmail.com', ['aaa@gmail.com', 'bbb@gmail.com'], 'from: "adib" <aaaa@gmail.com>\r\nto:<aaa@gmail.com>\r\nto:<bbb@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nfake email\n\r\n.'])
+    database.add_email(['alice@gmail.com', ['bob@gmail.com', 'alice@gmail.com'], 'from: "alice" <alice@gmail.com>\r\nto:<bob@gmail.com>\r\nto:<bob@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nhelow\r\n.'])
+    database.add_email(['alice,@gmail.com', ['bob@gmail.com', 'alice,@gmail.com'], 'from: "alice" <alice,@gmail.com>\r\nto:<bob@gmail.com>\r\nto:<alice,@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nfake email\r\n.'])
 def main():
     pass
 
