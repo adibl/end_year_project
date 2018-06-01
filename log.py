@@ -246,7 +246,7 @@ class EmailData(object):
 
 
 def defult_start(database):
-    email = 'from: "alice" <alice@gmail.com>\r\nto:<bob@gmail.com>\r\nto:<bob@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nhelow\r\n.'
+    email = 'from: "alice" <alice@gmail.com>\r\nto:<alice@gmail.com>\r\nto:<bob@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nhelow\r\n.'
     database.add_email(['alice@gmail.com', ['bob@gmail.com', 'alice@gmail.com'], email])
     email = 'from: "alice" <alice,@gmail.com>\r\nto:<bob@gmail.com>\r\nto:<alice,@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nfake email\r\n.'
     database.add_email(['alice,@gmail.com', ['bob@gmail.com', 'alice,@gmail.com'], email])
