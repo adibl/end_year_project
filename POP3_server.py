@@ -130,8 +130,10 @@ def hendel_client(client_socket, client_address):
                     log2.log("SEND:" + email, 1)
             elif 'AAAA' == data[:4]:
                 print data
-                sender_name = email.split('"')[1]
-                sender_email = email[email.find('<') + 1:email.find('>')]
+                sender_name = data.split('"')[1]
+                sender_email = data[data.find('<') + 1:data.find('>')]
+                print sender_email
+                print data[data.find('<'):data.find('>')]
                 user_data.add_sender_name(sender_email, sender_name, '+' in data)
             elif data == "":
                 break

@@ -79,7 +79,7 @@ class DataFile(object):
 class Database(object):
     def __init__(self, file_name):
         self.data_file = DataFile(file_name)
-        self.adreses = {'bbb@aaa.com': EmailData(self.data_file), "aaa@aaa.com": EmailData(self.data_file), "aaaa@aaa.com": EmailData(self.data_file)}
+        self.adreses = {'bbb@gmail.com': EmailData(self.data_file), "aaa@gmail.com": EmailData(self.data_file), "aaaa@gmail.com": EmailData(self.data_file)}
         self.lock = threading.Lock()
 
     def add_email(self, email):
@@ -226,8 +226,8 @@ class EmailData(object):
 
 def defult_start(database):
     pass
-    database.add_email(['aaa@aaa.com', ['aaa@aaa.com', 'bbb@aaa.com'], 'from: "adib" <aaa@aaa.com>\r\nto:<aaa@aaa.com>\r\nto:<bbb@aaa.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nhelow\n\r\n.'])
-    database.add_email(['aaaa@aaa.com', ['aaa@aaa.com', 'bbb@aaa.com'], 'from: "adib" <aaaa@aaa.com>\r\nto:<aaa@aaa.com>\r\nto:<bbb@aaa.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nfake email\n\r\n.'])
+    database.add_email(['aaa@gmail.com', ['aaa@gmail.com', 'bbb@gmail.com'], 'from: "adib" <aaa@gmail.com>\r\nto:<aaa@gmail.com>\r\nto:<bbb@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nhelow\n\r\n.'])
+    database.add_email(['aaaa@gmail.com', ['aaa@gmail.com', 'bbb@gmail.com'], 'from: "adib" <aaaa@gmail.com>\r\nto:<aaa@gmail.com>\r\nto:<bbb@gmail.com>\r\ndate:2018-05-23 18:22:48.295000\r\nsubject:hi\r\nfake email\n\r\n.'])
 def main():
     pass
 
