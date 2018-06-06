@@ -20,7 +20,7 @@ HELO_OPTIONS = ["HELO"]
 
 DESTINATION_INVALID = "515 - Destination mailbox address invalid\r\n"
 BAD_REQUEST = "500 - Bad Request\r\n"
-END_COMM = "221 - Domain service closing transmission channel\r\n"
+END_COMM_MASSEGE = "221 - Domain service closing transmission channel\r\n"
 READY = "220 - Domain service ready\r\n"
 COMPLETED_SUCCESSFULLY = "250 - Requested mail action completed and OK\r\n"
 START_DATA = "354 - Start mail input; end with .\r\n"
@@ -65,8 +65,8 @@ def hendel_client(client_socket, aa):
                     client_socket.close()
                     return
             elif data2[:4] == END_COMM:
-                client_socket.sendall(END_COMM)
-                log.log("SEND" + END_COMM, 1)
+                client_socket.sendall(END_COMM_MASSEGE)
+                log.log("SEND:" + END_COMM_MASSEGE, 1)
                 client_socket.close()
                 return
     except socket.error as err:

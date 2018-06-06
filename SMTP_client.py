@@ -12,14 +12,16 @@ import time
 import datetime
 from log import LogFile
 import tkMessageBox
+import tkFont
 
 ENDINGS = ['.com', '.co.il']
 SERVER_IP = "127.0.0.1"
-SERVER_PORT = 20011
+SMTP_PORT = 20011
 POP3_PORT = 1500
 START_EMAIL = "<"
 END_EMAIL = ">"
 SENDER_NAME = '"'
+FONT_SIZE = 11
 
 
 def login(client_socket):
@@ -27,6 +29,9 @@ def login(client_socket):
     window = Tk()
     window.title("login")
     window.minsize(300, 300)
+    default_font = tkFont.nametofont("TkDefaultFont")
+    default_font.configure(size=FONT_SIZE)
+    window.option_add("*Font", default_font)
     f = Frame(window)
     f.pack()
     l1 = Label(f, text='email: ')
@@ -49,34 +54,12 @@ def login(client_socket):
         email = t1.get()
         while not verify(email, client_socket):
             f.mainloop()
+            email = t1.get()
     global user_email
     user_email = email
     global user_name
     user_name = t2.get()
     window.destroy()
-
-
-"""
-def Sign_up(f, window):
-    f.destroy()
-    f =Frame(window)
-    f.pack()
-    l1 = Label(f, text='email:')
-    l2 = Label(f, text='name: ')
-    l3 = Label(f, text='pasword: ')
-    t1 = Entry(f, textvariable=StringVar())
-    t2 = Entry(f, show='*', textvariable=StringVar())
-    t3 = Entry(f, textvariable=StringVar())
-    button1 = Button(f, text='Sign-in', compound='bottom', command= lambda: check_valid(t1.get(), t2.get(), t3.get(), f, window))
-    l1.pack()
-    t1.pack()
-    l2.pack()
-    t2.pack()
-    l3.pack()
-    t3.pack()
-    button1.pack()
-    f.mainloop()
-    """
 
 
 def verify(email, client_socket):
@@ -100,7 +83,9 @@ def show_email(email, f, window, client_socket, is_valid):
     else:
         sender_name = email.split('"')[1]
         sender_email = email[email.find('<') + 1:email.find('>')]
-        ansear = tkMessageBox.askokcancel("Question", "This email is from " + sender_email + " named " + sender_name + 'are you sure thet this is his email?')
+        question = "This email is from " + sender_email + " named "
+        question += sender_name + ' are you sure thet this is his email?'
+        ansear = tkMessageBox.askokcancel("Question", question)
         if ansear:
             client_socket.sendall("AAAA+" + SENDER_NAME + sender_name + SENDER_NAME + " " + START_EMAIL + sender_email + END_EMAIL + "\r\n")
         else:
@@ -155,6 +140,9 @@ def inbox_GUI(emails, client_socket):
     window = Tk()
     window.title("inbox")
     window.minsize(1500, 1500)
+    default_font = tkFont.nametofont("TkDefaultFont")
+    default_font.configure(size=FONT_SIZE)
+    window.option_add("*Font", default_font)
     f = Frame(window)
     f.pack()
     for text_email in emails[0]:
@@ -212,8 +200,6 @@ def get_emails(client_socket):
 
 
 def POP3():
-    name = 'adi'
-    sender = 'aaa@aaa.com'
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client_socket.connect((SERVER_IP, POP3_PORT))
@@ -246,13 +232,15 @@ def check_valid(email):
 
 def send_email_GUI():
     """
-    GUI + send the input from user to ceck in the server and wait for responce
+    GUI + send the input from user to check in the server and wait for response
     """
     window = Tk()
-    f = Frame(window)
-    f.pack()
-    window.title("send_email")
+    window.title("send email")
     window.minsize(1000, 1000)
+    default_font = tkFont.nametofont("TkDefaultFont")
+    default_font.configure(size=FONT_SIZE)
+    print default_font.actual()
+    window.option_add("*Font", default_font)
     f = Frame(window)
     f.pack()
     l1 = Label(f, text='dest:')
@@ -373,7 +361,7 @@ def send_email2(masseges):
     """
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        client_socket.connect((SERVER_IP, SERVER_PORT))
+        client_socket.connect((SERVER_IP, SMTP_PORT))
         # send the message
         for m in masseges:
             time.sleep(0.2)
@@ -391,7 +379,7 @@ def SMTP():
     """
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
-        client_socket.connect((SERVER_IP, SERVER_PORT))
+        client_socket.connect((SERVER_IP, SMTP_PORT))
         # send the message
         if not handshake(client_socket, user_email):
             print "unvalid handshake"
@@ -417,7 +405,7 @@ def SMTP():
         print 'error in communication with server - ' + str(msg)
         tkMessageBox.showerror("Error", "the server cloze comm")
     finally:
-        time.sleep(1)
+        client_socket.send("QUIT\r\n")
         client_socket.close()
 
 
