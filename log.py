@@ -101,9 +101,7 @@ class Database(object):
         :param email:the email opn list. the sender, list of receivers and the data (sender,[dests list],data)
         :return: add the email to the database and return his place in file, return the place of the email
         """
-        print email
         place = self.add_to_database(email)
-        print place
         self.add_to_dicsionery(place, email)
         return place
 
@@ -125,7 +123,6 @@ class Database(object):
         :param email: the email that is in the file
         :return: none
         """
-        print "aa" + str(email)
         with self.lock:
             for dest in email[1]:
                 self.adreses[dest].add_recive_email(place, len(email[2]))
@@ -162,7 +159,6 @@ class EmailData(object):
         return: None
         """
         self.recive_emails.append((place, length))
-        print "add" + str(self.recive_emails)
 
     def add_sent_email(self, place, length):
         """

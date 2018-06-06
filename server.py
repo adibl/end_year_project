@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-author; Adi Bleyer
+author: Adi Bleyer
 Date: 52/5/18
-description: mai server, the lanch file of the servers
+description: mail server, the lance file of the servers
 """
 from threading import Thread
 from log import LogFile

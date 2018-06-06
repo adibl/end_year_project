@@ -42,7 +42,7 @@ def receive(client_socket, func=lambda data: "\r\n" not in data):
     return data
 
 
-def hendel_client(client_socket, aa):
+def hendel_client(client_socket, client_adress):
     """
     handel sending email client.
     :param client_socket: the current client socket
@@ -60,8 +60,10 @@ def hendel_client(client_socket, aa):
                 email = get_email(client_socket, data2)
                 if email is not False:
                     place = database.add_email(email)
-                    log.log("gat email from " + email[0] + " in place " + str(place), 2)
+                    log.log("gat email from user" + str(client_adress) + "from email" + email[0] + " in place " + str(place), 2)
                 else:
+                    client_socket.sendall(END_COMM_MASSEGE)
+                    log.log("SEND:" + END_COMM_MASSEGE, 1)
                     client_socket.close()
                     return
             elif data2[:4] == END_COMM:
@@ -157,7 +159,7 @@ def get_email(client_socket, data):
             client_socket.send(START_DATA)
             log.log("SEND:" + START_DATA, 1)
         elif data[:4] == END_COMM:
-            return False                    # problem becose it wont QUIT
+            return False
         else:
             client_socket.send(BAD_REQUEST)
             log.log("SEND:" + BAD_REQUEST, 1)
@@ -200,13 +202,3 @@ def main_loop(d, l):
         log.log('received socket exception - ' + str(err), 3)
     finally:
         server_socket.close()
-
-
-def main():
-    """
-    Add Documentation here
-    """
-
-
-if __name__ == '__main__':
-    pass

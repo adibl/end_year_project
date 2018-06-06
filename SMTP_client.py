@@ -44,7 +44,6 @@ def login(client_socket):
     l2.pack()
     t2.pack()
     button1.pack()
-    print 'window'
     f.mainloop()
     email = t1.get()
     if not verify(email, client_socket):
@@ -70,7 +69,6 @@ def verify(email, client_socket):
 
 
 def show_email(email, f, window, client_socket, is_valid):
-    print email
     f.pack_forget()
     f2 = Frame(window)
     f2.pack(expand=True, fill=BOTH)
@@ -136,7 +134,6 @@ def update_GUI(emails, client_socket, window, f):
 
 
 def inbox_GUI(emails, client_socket):
-    print emails
     window = Tk()
     window.title("inbox")
     window.minsize(1500, 1500)
@@ -188,14 +185,12 @@ def get_emails(client_socket):
             break
         else:
             length = filter(lambda char: char.isdigit(), data)
-            print length
             email = receive(client_socket, lambda d: "\r\n." not in d)
 
             if "?" in data:
                 unknown_emails.append(email)
             elif "-" not in data:
                 emails.append(email)
-    print [emails, unknown_emails]
     return [emails, unknown_emails]
 
 
@@ -239,7 +234,6 @@ def send_email_GUI():
     window.minsize(1000, 1000)
     default_font = tkFont.nametofont("TkDefaultFont")
     default_font.configure(size=FONT_SIZE)
-    print default_font.actual()
     window.option_add("*Font", default_font)
     f = Frame(window)
     f.pack()
