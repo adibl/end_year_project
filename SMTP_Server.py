@@ -128,7 +128,6 @@ def get_email(client_socket, data):
     :return: false if ther was a problem and list if the email is ready.
     FIXME: endless while loops
     """
-    data = data
     if SENDER_HEADER not in data:
         return False
     sender = data[data.find("<")+1:data.find(">")]
@@ -174,7 +173,6 @@ def get_email(client_socket, data):
         return False
     client_socket.send(COMPLETED_SUCCESSFULLY)
     log.log("SEND:" + COMPLETED_SUCCESSFULLY, 1)
-
     return [sender, dests, data]
 
 

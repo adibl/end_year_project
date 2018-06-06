@@ -84,10 +84,11 @@ def show_email(email, f, window, client_socket, is_valid):
         question = "This email is from " + sender_email + " named "
         question += sender_name + ' are you sure thet this is his email?'
         ansear = tkMessageBox.askokcancel("Question", question)
+        request = SENDER_NAME + sender_name + SENDER_NAME + " " + START_EMAIL + sender_email + END_EMAIL + "\r\n"
         if ansear:
-            client_socket.sendall("AAAA+" + SENDER_NAME + sender_name + SENDER_NAME + " " + START_EMAIL + sender_email + END_EMAIL + "\r\n")
+            client_socket.sendall("AAAA+" + request)
         else:
-            client_socket.sendall("AAAA-" + SENDER_NAME + sender_name + SENDER_NAME + " " + START_EMAIL + sender_email + END_EMAIL + "\r\n")
+            client_socket.sendall("AAAA-" + request)
         if ansear:
             f2.mainloop()
     f2.destroy()
